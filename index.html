@@ -1,0 +1,30 @@
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+{% extends 'bootstrap/base.html' %}
+
+{% block content %}
+<header>
+    <div class="jumbotron text-center">
+        <h1>Heart Rate music</h1>
+    </div>
+</header>
+
+<div class="container" class="panel panel-default">
+    <table class="table table-condensed">
+        <thead>
+        <tr>
+            <th>File Name</th>
+            <th>File Path</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for file in music_files %}
+        <tr>
+            <td> {{ file['file_name'] }} </td>
+            <td><a href="{{ file['file_path'] }}">{{ file['file_name'] }}</a></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<br><br><br>
+{% endblock %}
