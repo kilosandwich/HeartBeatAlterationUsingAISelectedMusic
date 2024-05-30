@@ -1,3 +1,6 @@
+"""this is the main file for the front end it will load the webpage with the list of mp3 files from the given directory. 
+ it will also create a csv with the git charactersitics, in the rootpath function put the directory that has the music file
+you want to use. Also put the directory path in the if __name__ == "__main__": for the directory path."""
 
 from flask import Flask, render_template
 from flask_bootstrap import Bootstrap
