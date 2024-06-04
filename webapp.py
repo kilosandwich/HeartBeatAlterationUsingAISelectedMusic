@@ -14,6 +14,7 @@ from openant.devices import ANTPLUS_NETWORK_KEY
 from openant.devices.heart_rate import HeartRate, HeartRateData
 from ModelDefinition import SimpleNN  # Ensure to import your model class
 
+
 # Initialize Flask app and Bootstrap
 app = Flask(__name__)
 Bootstrap(app)
@@ -23,7 +24,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 csv_file = "music_characteristics.csv"
 TIMEOUT = 60
 XX = 20
-HR = 0  # Global variable to store heart rate
+HR = 0  # Global variable that will store heart rate
 
 # Define the model
 input_size = 9
@@ -116,7 +117,7 @@ def generate_csv(directory_path, csv_file):
             writer.writerow([os.path.basename(audio_file)] + characteristics)
             print(f"Characteristics for {audio_file}: {characteristics}")
 
-# Function to get resting heart rate
+# Function to get  the users resting heart rate
 def get_resting_HR():
     start_time = time.time()
     heart_rates = []
@@ -132,7 +133,7 @@ def get_resting_HR():
 
     return -1
 
-# Function to get current heart rate
+# Function that gives current heart rate
 def get_current_heart_rate(device_id=0):
     global HR
     while True:
@@ -166,7 +167,7 @@ def get_current_heart_rate(device_id=0):
         node.stop()
     return HR
 
-# Function to select music based from heart rate
+# Function to select music based on heart rate
 def selectMusic(targetHR, heartRate, restingHR, csvLocation):
     goalHRChange = targetHR - heartRate
     with open(csvLocation, 'r') as file:
@@ -196,7 +197,7 @@ def start_hr_monitor():
     hr = get_resting_HR()
     return jsonify({"hr": hr})
 
-# Route to get music recommendations based on heart rate
+# Route to get music recommendations from heart rate
 @app.route("/get_music", methods=["POST"])
 def get_music():
     data = request.json
@@ -219,7 +220,7 @@ if __name__ == "__main__":
     # Start a timer to open the browser
     Timer(1, open_browser).start()
     
-    # Run the Flask application
+    # Start the Flask application
     app.run(port=5000, debug=True)
 
 
