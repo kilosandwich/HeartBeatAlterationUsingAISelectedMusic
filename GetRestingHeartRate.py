@@ -1,34 +1,19 @@
-#Implement a popup on the front-end to instruct the user to take a deep breath and try to relax before measuring
 import time
 import numpy as np
 from openant.easy.node import Node
 from openant.devices import ANTPLUS_NETWORK_KEY
 from openant.devices.heart_rate import HeartRate, HeartRateData
-XX = 20
-TIMEOUT = 60
 
-def get_resting_HR():
+def get_resting_HR(device_id=0):
+    TIMEOUT = 60
     start_time = time.time()
     heart_rates = []
+    resting_heart_rate = None  
 
-    while time.time() - start_time < TIMEOUT:
-        current_rate = get_current_heart_rate()  # storees the current heart rate inside the variable
-        heart_rates.append(current_rate) # adds the value of current_rate to the heart_rates list
-
-        if len(heart_rates) > 1 and (max(heart_rates) - min(heart_rates)) <= 3: # Checks if there has been more than 1 heartrate recorded and if the range of the rates is 3 or less to determine heart rate stability
-            return int(np.mean(heart_rates)) # calculates and returns the average estimated resting heart rate
-
-        time.sleep(XX)
-
-    # If heart rate never stabilizes, notify user on the front end about stabilization failure and suggest manual input or retry
-    return -1
-
-def get_current_heart_rate(device_id=0):
     while True:
         try:
             node = Node()
             node.set_network_key(0x00, ANTPLUS_NETWORK_KEY)
-            #the device that is found is only a heartRate device
             device = HeartRate(node, device_id=device_id)
             break
         except Exception as e:
@@ -38,8 +23,25 @@ def get_current_heart_rate(device_id=0):
         print(f"Device {device} found and receiving")
 
     def on_device_data(page: int, page_name: str, data):
+        nonlocal TIMEOUT
+        nonlocal start_time
+        nonlocal heart_rates
+        nonlocal resting_heart_rate  
+
         if isinstance(data, HeartRateData):
-            print(f"Heart rate update {data.heart_rate} bpm")
+            current_rate = data.heart_rate
+            print(f"Heart rate update {current_rate} bpm")
+            heart_rates.append(current_rate)
+            print(heart_rates)
+            if len(heart_rates) > 1 and (max(heart_rates) - min(heart_rates)) <= 3:
+                resting_heart_rate = int(np.mean(heart_rates))  
+                device.close_channel()
+                node.stop()
+            
+            if (time.time() - start_time) >= TIMEOUT:
+                resting_heart_rate = -1  
+                device.close_channel()
+                node.stop()
 
     device.on_found = on_found
     device.on_device_data = on_device_data
@@ -53,6 +55,7 @@ def get_current_heart_rate(device_id=0):
         device.close_channel()
         node.stop()
 
-
+    return resting_heart_rate  
 if __name__ == "__main__":
-    get_current_heart_rate()
+    resting_hr = get_resting_HR()
+    print(f"Resting Heart Rate: {resting_hr}")
