@@ -1,0 +1,99 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Rate Music</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="jumbotron text-center">
+            <h1>Heart Rate Music</h1>
+        </div>
+        <style>
+            body {
+                background-color: #e4f4fa;
+                margin: 0 10%;
+                font-family: sans-serif;
+            }
+        </style>
+    </header>
+    <div class="container">
+        <div class="panel panel-default">
+            <table class="table table-condensed">
+                <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>File Path</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for file in music_files %}
+                <tr>
+                    <td>{{ file['file_name'] }}</td>
+                    <td><a href="{{ file['file_path'] }}">{{ file['file_name'] }}</a></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <br>
+        <button id="startHR" class="btn btn-primary">Press to get resting Heart Rate</button>
+        <p id="hrResult"></p>
+        <br>
+        <h3>Music Recommendation</h3>
+        <label for="targetHR">Target Heart Rate:</label>
+        <input type="number" id="targetHR" placeholder="Enter target heart rate">
+        <label for="currentHR">Current Heart Rate:</label>
+        <input type="number" id="currentHR" placeholder="Enter current heart rate">
+        <label for="restingHR">Resting Heart Rate:</label>
+        <input type="number" id="restingHR" placeholder="Enter resting heart rate">
+        <button id="getMusic" class="btn btn-success">Get Music Recommendation</button>
+        <p id="musicResult"></p>
+    </div>
+    <script>
+        $(document).ready(function(){
+            $("#startHR").click(function(){
+                $.ajax({
+                    url: "/start_hr_monitor",
+                    method: "GET",
+                    success: function(data){
+                        $("#hrResult").text("Resting Heart Rate: " + data.hr);
+                    },
+                    error: function(error){
+                        $("#hrResult").text("Error fetching heart rate data.");
+                    }
+                });
+            });
+
+            $("#getMusic").click(function(){
+                var targetHR = $("#targetHR").val();
+                var currentHR = $("#currentHR").val();
+                var restingHR = $("#restingHR").val();
+
+                if (targetHR && currentHR && restingHR) {
+                    $.ajax({
+                        url: "/get_music",
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            targetHR: targetHR,
+                            heartRate: currentHR,
+                            restingHR: restingHR
+                        }),
+                        success: function(data){
+                            $("#musicResult").text("Selected Music: " + data.selected_music);
+                        },
+                        error: function(error){
+                            $("#musicResult").text("Error fetching music recommendation.");
+                        }
+                    });
+                } else {
+                    $("#musicResult").text("Please enter all heart rate values.");
+                }
+            });
+        });
+    </script>
