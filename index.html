@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,8 +40,11 @@
             </table>
         </div>
         <br>
-        <button id="startHR" class="btn btn-primary">Press to get resting Heart Rate</button>
-        <p id="hrResult"></p>
+        <button id="startRestingHR" class="btn btn-primary">Take a deep inhale and get Resting Heart Rate</button>
+        <p id="restingHRResult"></p>
+        <br>
+        <button id="startCurrentHR" class="btn btn-primary">Now get your Current Heart Rate</button>
+        <p id="currentHRResult"></p>
         <br>
         <h3>Music Recommendation</h3>
         <label for="targetHR">Target Heart Rate:</label>
@@ -56,15 +58,30 @@
     </div>
     <script>
         $(document).ready(function(){
-            $("#startHR").click(function(){
+            $("#startRestingHR").click(function(){
                 $.ajax({
-                    url: "/start_hr_monitor",
+                    url: "/start_resting_hr_monitor",
                     method: "GET",
                     success: function(data){
-                        $("#hrResult").text("Resting Heart Rate: " + data.hr);
+                        $("#restingHRResult").text("Resting Heart Rate: " + data.hr);
+                        $("#restingHR").val(data.hr);  // Automatically input the restingHR input
                     },
                     error: function(error){
-                        $("#hrResult").text("Error fetching heart rate data.");
+                        $("#restingHRResult").text("Error getting resting heart rate data.");
+                    }
+                });
+            });
+
+            $("#startCurrentHR").click(function(){
+                $.ajax({
+                    url: "/start_current_hr_monitor",
+                    method: "GET",
+                    success: function(data){
+                        $("#currentHRResult").text("Current Heart Rate: " + data.hr);
+                        $("#currentHR").val(data.hr);  //   auto fill in the currentHR input
+                    },
+                    error: function(error){
+                        $("#currentHRResult").text("Error getting current heart rate data.");
                     }
                 });
             });
@@ -97,3 +114,8 @@
             });
         });
     </script>
+</body>
+</html>
+
+
+
