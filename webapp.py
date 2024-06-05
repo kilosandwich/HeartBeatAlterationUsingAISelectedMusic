@@ -1,3 +1,4 @@
+from flask import Flask, render_template, request, jsonify
 import os
 import glob
 import csv
@@ -7,26 +8,21 @@ from threading import Timer
 import numpy as np
 import torch
 import librosa
-from flask import Flask, render_template, request, jsonify
 from flask_bootstrap import Bootstrap
 from openant.easy.node import Node
 from openant.devices import ANTPLUS_NETWORK_KEY
 from openant.devices.heart_rate import HeartRate, HeartRateData
-from ModelDefinition import SimpleNN  # Ensure to import your model class
+from ModelDefinition import SimpleNN
 
-
-# Initialize Flask app and Bootstrap
 app = Flask(__name__)
 Bootstrap(app)
 
-# Global variables and constants
 script_dir = os.path.dirname(os.path.abspath(__file__))
 csv_file = "music_characteristics.csv"
 TIMEOUT = 60
 XX = 20
-HR = 0  # Global variable that will store heart rate
+HR = 0
 
-# Define the model
 input_size = 9
 hidden_size = 10
 output_size = 1
@@ -35,29 +31,28 @@ dropout_prob = 0.1
 
 model_path = os.path.join(script_dir, "HBModel.pth")
 
-# Instantiate the model
 model = SimpleNN(input_size, hidden_size, output_size, dropout_prob)
-model.load_state_dict(torch.load(model_path))
-model.eval()
+try:
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
+    print("Model loaded and set to evaluation mode.")
+except Exception as e:
+    print(f"Error loading model: {e}")
 
-# Route for the main page
 @app.route("/myapp")
 def index():
     music_files = get_music_files()
     return render_template('index.html', music_files=music_files)
 
-# Function to get music files
 def get_music_files():
-    rootpath = "/Users/jeremyjohn/Desktop/music"
+    rootpath = r"C:\Users\ahmad\OneDrive\Desktop\Project\HeartBeatAlterationUsingAISelectedMusic-main\music"
     pattern = "*.mp3"
     files = glob.glob(os.path.join(rootpath, pattern))
     return [{'file_name': os.path.basename(file), 'file_path': file} for file in files]
 
-# Function that load audio segment
 def load_audio_segment(audioInfo, samplingRate, startTime, durationTime):
     return audioInfo[int(startTime * samplingRate):int((startTime + durationTime) * samplingRate)]
 
-# Function that compute tempo
 def compute_tempo(audioInfo, samplingRate):
     try:
         tempo, _ = librosa.beat.beat_track(y=audioInfo, sr=samplingRate)
@@ -66,7 +61,6 @@ def compute_tempo(audioInfo, samplingRate):
         print(f"Error computing tempo: {e}")
         return None
 
-# Function that compute average pitch
 def compute_average_pitch(audioInfo, samplingRate):
     try:
         pitches, _ = librosa.piptrack(y=audioInfo, sr=samplingRate)
@@ -75,7 +69,6 @@ def compute_average_pitch(audioInfo, samplingRate):
         print(f"Error computing pitch: {e}")
         return None
 
-# Function to gives the  characteristics of a music file
 def get_characteristics(filepath):
     try:
         y, samplingRate = librosa.load(filepath)
@@ -87,22 +80,21 @@ def get_characteristics(filepath):
         tempo_last_30 = compute_tempo(last_30s_audio, samplingRate)
         avgPitch = compute_average_pitch(y, samplingRate)
         pitch_first_30 = compute_average_pitch(first_30s_audio, samplingRate)
-        pitch_last_30 = compute_average_pitch(last_30s_audio, samplingRate)
+        pitch_last_30 = compute_average_pitch(last_30s_audio,_samplingRate)
 
         return [
-            songLength,
             avgTempo,
             tempo_first_30,
             tempo_last_30,
-            avgPitch,
+            songLength,
             pitch_first_30,
-            pitch_last_30
+            pitch_last_30,
+            avgPitch
         ]
     except Exception as e:
-        print(f"Error processing file {filepath}: {e}")
+        print(f"Error getting characteristics for {filepath}: {e}")
         return [None] * 7
 
-# Function to generate CSV with audio characteristics
 def generate_csv(directory_path, csv_file):
     pattern = "*.mp3"
     audio_files = glob.glob(os.path.join(directory_path, pattern))
@@ -114,10 +106,11 @@ def generate_csv(directory_path, csv_file):
         for audio_file in audio_files:
             print(f"Processing file: {audio_file}")
             characteristics = get_characteristics(audio_file)
+            print("Here are the file characteristics")
+            print(characteristics)
             writer.writerow([os.path.basename(audio_file)] + characteristics)
             print(f"Characteristics for {audio_file}: {characteristics}")
 
-# Function to get  the users resting heart rate
 def get_resting_HR():
     start_time = time.time()
     heart_rates = []
@@ -133,7 +126,6 @@ def get_resting_HR():
 
     return -1
 
-# Function that gives current heart rate
 def get_current_heart_rate(device_id=0):
     global HR
     while True:
@@ -161,15 +153,20 @@ def get_current_heart_rate(device_id=0):
         print(f"Starting {device}, press Ctrl-C to finish")
         node.start()
     except Exception as e:
-        print("Closing ANT+ device...")
+        print(f"Error with ANT+ device: {e}")
     finally:
         device.close_channel()
         node.stop()
     return HR
 
-# Function to select music based on heart rate
 def selectMusic(targetHR, heartRate, restingHR, csvLocation):
+    targetHR = int(targetHR)
+    heartRate = int(heartRate)
+    restingHR = int(restingHR)
+
     goalHRChange = targetHR - heartRate
+    print(f"Target HR: {targetHR}, Current HR: {heartRate}, Resting HR: {restingHR}, Goal HR Change: {goalHRChange}")
+    
     with open(csvLocation, 'r') as file:
         reader = csv.reader(file)
         rows = list(reader)
@@ -177,56 +174,49 @@ def selectMusic(targetHR, heartRate, restingHR, csvLocation):
     
     currentSong = [rows[0][0], 0]
     for musicRow in rows:
-        tempList = [float(musicRow[i]) for i in range(1, len(musicRow))]
-        tempList.append(heartRate)
-        tempList.append(restingHR)
-        tempTensor = torch.tensor(tempList, dtype=torch.float32)
-        tempprediction = model(tempTensor).tolist()[0]
-        tempprediction = [musicRow[0], tempprediction]
-        if goalHRChange > 0:
-            if tempprediction[1] > currentSong[1]:
-                currentSong = tempprediction.copy()
-        else:
-            if tempprediction[1] < currentSong[1]:
-                currentSong = tempprediction.copy()
+        try:
+            tempList = [float(musicRow[i]) for i in range(1, len(musicRow))]
+            tempList.append(heartRate)
+            tempList.append(restingHR)
+            tempTensor = torch.tensor(tempList, dtype=torch.float32)
+            tempprediction = model(tempTensor).tolist()[0]
+            print(f"Song: {musicRow[0]}, Prediction: {tempprediction}")
+            tempprediction = [musicRow[0], tempprediction]
+            if goalHRChange > 0:
+                if tempprediction[1] > currentSong[1]:
+                    currentSong = tempprediction.copy()
+            else:
+                if tempprediction[1] < currentSong[1]:
+                    currentSong = tempprediction.copy()
+        except Exception as e:
+            print(f"Error selecting music for row {musicRow}: {e}")
+    print(f"Selected Song: {currentSong[0]}, Prediction: {currentSong[1]}")
     return currentSong[0]
 
-# Route that starts heart rate monitoring
 @app.route("/start_hr_monitor", methods=["GET"])
 def start_hr_monitor():
     hr = get_resting_HR()
     return jsonify({"hr": hr})
 
-# Route to get music recommendations from heart rate
 @app.route("/get_music", methods=["POST"])
 def get_music():
     data = request.json
     targetHR = data['targetHR']
     heartRate = data['heartRate']
     restingHR = data['restingHR']
+    print(f"Received request: Target HR: {targetHR}, Current HR: {heartRate}, Resting HR: {restingHR}")
     csvLocation = os.path.join(script_dir, "music_characteristics.csv")
     selected_music = selectMusic(targetHR, heartRate, restingHR, csvLocation)
     return jsonify({'selected_music': selected_music})
 
 if __name__ == "__main__":
-    directory_path = "/Users/jeremyjohn/Desktop/music"
+    directory_path = r"C:\Users\ahmad\OneDrive\Desktop\Project\HeartBeatAlterationUsingAISelectedMusic-main\music"
     
-    # Generate CSV file with audio characteristics
     generate_csv(directory_path, csv_file)
 
     def open_browser():
         webbrowser.open_new("http://127.0.0.1:5000/myapp")
     
-    # Start a timer to open the browser
     Timer(1, open_browser).start()
     
-    # Start the Flask application
     app.run(port=5000, debug=True)
-
-
-
-
-
-        
-    
-
