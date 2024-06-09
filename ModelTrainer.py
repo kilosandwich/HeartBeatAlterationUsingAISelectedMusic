@@ -65,11 +65,9 @@ def main():
     for mp3_file in mp3_files:
         print(f"Playing: {mp3_file}")
         
-        # Execute external scripts
         execute_script("C:/Users/ahmad/OneDrive/School/Capstone/GetCharacteristics.py")
         execute_script("C:/Users/ahmad/OneDrive/School/Capstone/GetRestingHeartRate.py")
         
-        # Read characteristics and resting heart rate before playing the music to see the 
         characteristics_str = read_file("C:/Users/ahmad/OneDrive/School/Capstone/characteristics.txt")
         resting_heart_rate_str = read_file("C:/Users/ahmad/OneDrive/School/Capstone/resting_heart_rate.txt")
 
@@ -79,23 +77,18 @@ def main():
         characteristics = eval(characteristics_str)
         resting_heart_rate = float(resting_heart_rate_str)
         
-        # Plays the mp3 file
         play_mp3(mp3_file)
         
-        # gets the users resting heart rate again after playing the music to see the new resting heart rate
         execute_script("C:/Users/ahmad/OneDrive/School/Capstone/GetRestingHeartRate.py")
         
-        # Gets the users heart rate after playing the file
         heart_rate_str = read_file("C:/Users/ahmad/OneDrive/School/Capstone/resting_heart_rate.txt")
         if heart_rate_str is None:
             continue
         
         heart_rate = float(heart_rate_str)
         
-        # Calculates the change in the users heart rate
         change_in_heart_rate = heart_rate - resting_heart_rate
         
-        # Appends the results to the list
         results.append({
             "file": mp3_file,
             "characteristics": characteristics,
@@ -104,7 +97,6 @@ def main():
             "change_in_heart_rate": change_in_heart_rate
         })
 
-    # Saves results to a text file (which may be altered later)
     results_file = os.path.join(music_folder, "results.txt")
     try:
         with open(results_file, 'w') as f:
