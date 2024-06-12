@@ -6,19 +6,19 @@
     <title>Heart Rate Music</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <style>
+        body {
+            background-color: #e4f4fa;
+            margin: 0 10%;
+            font-family: sans-serif;
+        }
+    </style>
 </head>
 <body>
     <header>
         <div class="jumbotron text-center">
             <h1>Heart Rate Music</h1>
         </div>
-        <style>
-            body {
-                background-color: #e4f4fa;
-                margin: 0 10%;
-                font-family: sans-serif;
-            }
-        </style>
     </header>
     <div class="container">
         <div class="panel panel-default">
@@ -33,7 +33,7 @@
                 {% for file in music_files %}
                 <tr>
                     <td>{{ file['file_name'] }}</td>
-                    <td><a href="{{ file['file_path'] }}">{{ file['file_name'] }}</a></td>
+                    <td><a href="{{ file['file_path'] }}" target="_blank">{{ file['file_name'] }}</a></td>
                 </tr>
                 {% endfor %}
                 </tbody>
@@ -55,6 +55,10 @@
         <input type="number" id="restingHR" placeholder="Enter resting heart rate">
         <button id="getMusic" class="btn btn-success">Get Music Recommendation</button>
         <p id="musicResult"></p>
+        <div id="audioPlayer" style="display:none">
+            <button id="playPauseBtn" class="btn btn-info" onClick="playPause()">Play/Pause Song</button>
+            <audio id="audio" src="" controls></audio>
+        </div>
     </div>
     <script>
         $(document).ready(function(){
@@ -78,7 +82,7 @@
                     method: "GET",
                     success: function(data){
                         $("#currentHRResult").text("Current Heart Rate: " + data.hr);
-                        $("#currentHR").val(data.hr);  //   auto fill in the currentHR input
+                        $("#currentHR").val(data.hr);  // Auto fill in the currentHR input
                     },
                     error: function(error){
                         $("#currentHRResult").text("Error getting current heart rate data.");
@@ -102,7 +106,13 @@
                             restingHR: restingHR
                         }),
                         success: function(data){
-                            $("#musicResult").text("Selected Music: " + data.selected_music);
+                            if(data.selected_music) {
+                                $("#musicResult").text("Selected Music: " + data.selected_music);
+                                $("#audioPlayer").show();
+                                $("#audio").attr("src", data.selected_music);
+                            } else {
+                                $("#musicResult").text("No suitable music found.");
+                            }
                         },
                         error: function(error){
                             $("#musicResult").text("Error fetching music recommendation.");
@@ -113,9 +123,22 @@
                 }
             });
         });
+
+        var isPlaying = false;
+        function playPause() {
+            var audio = document.getElementByName("audio");
+            if (isPlaying) {
+                audio.pause();
+            } else {
+                audio.play();
+            }
+            isPlaying = !isPlaying;
+        }
     </script>
 </body>
 </html>
+
+
 
 
 
