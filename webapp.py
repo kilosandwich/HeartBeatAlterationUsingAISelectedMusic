@@ -7,13 +7,12 @@ from threading import Timer
 import numpy as np
 import torch
 import librosa
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_bootstrap import Bootstrap
 from openant.easy.node import Node
 from openant.devices import ANTPLUS_NETWORK_KEY
 from openant.devices.heart_rate import HeartRate, HeartRateData
 from ModelDefinition import SimpleNN  # Ensure to import your model class
-#this is the latest version of webapp
 
 # Initialize Flask app and Bootstrap
 app = Flask(__name__)
@@ -21,10 +20,15 @@ Bootstrap(app)
 
 # Global variables and constants
 script_dir = os.path.dirname(os.path.abspath(__file__))
+music_dir = os.path.join(script_dir, "music")
 csv_file = "music_characteristics.csv"
 TIMEOUT = 60
 XX = 20
 HR = 0  # Global variable that will store heart rate
+
+# Ensure the music directory exists
+if not os.path.exists(music_dir):
+    os.makedirs(music_dir)
 
 # Define the model
 input_size = 9
@@ -52,10 +56,9 @@ def index():
 
 # Function to get music files
 def get_music_files():
-    rootpath = os.path.join(script_dir, "music")
     pattern = "*.mp3"
-    files = glob.glob(os.path.join(rootpath, pattern))
-    return [{'file_name': os.path.basename(file), 'file_path': file} for file in files]
+    files = glob.glob(os.path.join(music_dir, pattern))
+    return [{'file_name': os.path.basename(file), 'file_path': f'/music/{os.path.basename(file)}'} for file in files]
 
 # Function to load audio segment
 def load_audio_segment(audioInfo, samplingRate, startTime, durationTime):
@@ -79,7 +82,7 @@ def compute_average_pitch(audioInfo, samplingRate):
         print(f"Error computing pitch: {e}")
         return None
 
-# Function to get the (get characteristics) of a music file
+# Function to get the characteristics of a music file
 def get_characteristics(filepath):
     if not os.path.isfile(filepath):
         print(f"Error: {filepath} is not a file.")
@@ -126,8 +129,7 @@ def generate_csv(directory_path, csv_file):
             print(characteristics)
             musicFilePath = str(os.path.basename(audio_file))
             rowToWrite = characteristics.copy()
-            #rowToWrite = [int(item) for item in rowToWrite]
-            rowToWrite.insert(0,musicFilePath)
+            rowToWrite.insert(0, musicFilePath)
             print("This is the row we are attempting to write: ", rowToWrite)
             writer.writerow(rowToWrite)
             print(f"Characteristics for {audio_file}: {characteristics}")
@@ -249,7 +251,6 @@ def selectMusic(targetHR, heartRate, restingHR, csvLocation):
     for musicRow in rows:
         try:
             tempList = [float(musicRow[i]) for i in range(1, len(musicRow))]
-           
             tempList.append(heartRate)
             tempList.append(restingHR)
             tempTensor = torch.tensor(tempList, dtype=torch.float32)
@@ -289,7 +290,14 @@ def get_music():
     print(f"Received request: Target HR: {targetHR}, Current HR: {heartRate}, Resting HR: {restingHR}")
     csvLocation = os.path.join(script_dir, "music_characteristics.csv")
     selected_music = selectMusic(targetHR, heartRate, restingHR, csvLocation)
-    return jsonify({'selected_music': selected_music})
+    if selected_music:
+        music_path = f'/music/{selected_music}'
+        return jsonify({'selected_music': music_path})
+    return jsonify({'error': 'No song selected'})
+
+@app.route('/music/<filename>')
+def play_music(filename):
+    return send_from_directory(music_dir, filename)
 
 if __name__ == "__main__":
     directory_path = os.path.join(script_dir, "music")
@@ -302,4 +310,5 @@ if __name__ == "__main__":
     Timer(1, open_browser).start()
     
     app.run(port=5000, debug=True)
+
 
