@@ -1,4 +1,4 @@
-print("Starting up heartRateFeed.py")
+print("Starting up HeartRateFeed.py")
 from openant.easy.node import Node
 from openant.devices import ANTPLUS_NETWORK_KEY
 from openant.devices.heart_rate import HeartRate, HeartRateData
@@ -8,20 +8,20 @@ import queue
 
 heart_rate_data = queue.Queue(maxsize=1)
 update_interval = 10
-fixed_list_size = 10
+fixed_list_size = 5
 
-def heart_rate_monitor(device_id=0):
+try:
+    node = Node()
+    node.set_network_key(0x00, ANTPLUS_NETWORK_KEY)
+    device = HeartRate(node)
+except Exception as e:
+    print(f"Failed to initialize node or device: {e}")
+    exit(1)
+
+def heart_rate_monitor(device):
+    print("heart_rate_monitor function started") 
     last_update_time = datetime.now()
     heart_rate_list = []
-
-    while True:
-        try:
-            node = Node()
-            node.set_network_key(0x00, ANTPLUS_NETWORK_KEY)
-            device = HeartRate(node, device_id=device_id)
-            break
-        except Exception as e:
-            print("Failed to initialize node, trying again!")
 
     def device_found():
         print(f"Device {device} found and receiving")
@@ -52,5 +52,8 @@ def heart_rate_monitor(device_id=0):
         device.close_channel()
         node.stop()
 
-def start_monitor():
-    threading.Thread(target=heart_rate_monitor).start()
+def start_monitor(device):
+    print("Starting monitor thread...")  
+    threading.Thread(target=heart_rate_monitor, args=(device,)).start()
+
+start_monitor(device)
