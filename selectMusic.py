@@ -72,7 +72,7 @@ def selectMusic(targetHR, heartRate, restingHR, csvLocation, approachPath = "def
     #positive or negative version of itself
     #then change the approach path to fastest to achieve that goal
     if approachPath == "Rollercoaster":
-        goalHRChange = random.choice([goalHRChange, -goalHRChange])
+        goalHRChange = random.choice([goalHRChange, goalHRChange, -goalHRChange])
     elif approachPath == "Parabola":
         #if the goal is positive, occasionally randomly overshoot in target heart
         #rate goal
