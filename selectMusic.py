@@ -16,13 +16,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 import random
 
 
-#################CONSTANTS FOR CONFIGURATION###########################
-SHALLOW = 1
-LINEAR = 2
-STEEP = 3
 
-
-#######################################################################
 
 
 #########################################################################
@@ -68,6 +62,29 @@ import csv
 def selectMusic(targetHR, heartRate, restingHR, csvLocation, approachPath = "default"):
     
     goalHRChange = targetHR - heartRate
+    
+    #################CONSTANTS FOR CONFIGURATION###########################
+    #initialize variables
+    SHALLOW = 0
+    LINEAR = 0
+    STEEP = 0
+    
+    #change value of variable based upon direction of HR change
+    if goalHRChange > 0:
+        SHALLOW = 1
+        LINEAR = 2
+        STEEP = 3
+    else:
+        SHALLOW = -1
+        LINEAR = -2
+        STEEP = -3
+    #######################################################################
+    
+    
+    
+    
+    
+    
     #if the approach path is 'rollercoaster' change the goal to a randomly
     #positive or negative version of itself
     #then change the approach path to fastest to achieve that goal
@@ -132,6 +149,9 @@ def selectMusic(targetHR, heartRate, restingHR, csvLocation, approachPath = "def
         currentChangeRate = currentSongHRChange/currentSongLength
         
         if approachPath == "Shallow":
+
+            
+            
             #CurrentSongGap between SHALLOW
             tempGap = calculateGap(SHALLOW, tempChangeRate)
             currentGap = calculateGap(SHALLOW,currentChangeRate)
