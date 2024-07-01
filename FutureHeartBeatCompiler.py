@@ -45,10 +45,14 @@ datafilename = "HR.csv"
 script_directory = os.path.dirname(os.path.abspath(__file__))
 file_path = os.path.join(script_directory, datafilename)
 
+#if a row has a NA value, SKIP THE ENTIRE ROW, NO PARTIAL DATA
 data = pd.read_csv(file_path, skiprows=0, na_values=['NA', 'nan', "NAN", "NaN", '']) 
+#drops the NA rows
 data = data.dropna()
 
 #in my world, the last number of the column is ALWAYS the target
+#The output of this is two lists, let's check to make sure they are the same list. 
+
 input_data = data.iloc[:, :-1].values.tolist()
 target_data = [[item] for item in data.iloc[:, -1].values.tolist()] 
 
@@ -56,11 +60,29 @@ target_data = [[item] for item in data.iloc[:, -1].values.tolist()]
 #check to make sure your data is formatted correctly
 print("First row of input_data:")
 print(input_data[0])
-print(input_data)
+#print(input_data)
 
 print("First row of target_data:")
 print(target_data[0])
-print(target_data)
+##print(target_data)
+
+#print the length
+print("CHECK LENGTH OF ROWS, IF THEY ARE NOT THE SAME, THERE IS A MISMATCH")
+print("The length of the initial input data is: ",len(input_data))
+print("The length of the initial target data is: ", len(target_data))
+
+###############PARTITION THE TRAINING DATA INTO TRAINING DATA AND TESTING DATA #####################
+trainingDataPercentage = 0.7 #70% of all data should be training data, the remaining 30% should be test data
+partitionIndex = int(len(input_data)*trainingDataPercentage)
+#testing data is all data AFTER the partition index
+testingData = input_data[partitionIndex:] 
+testingDataTarget = target_data[partitionIndex:]
+#training data is all data BEFORE the partition index
+input_data = input_data[:partitionIndex]
+target_data = target_data[:partitionIndex]
+
+
+####################################################################################################
 
 #make sure the number of input variables in scalable if we wish to increase the size of the data set
 num_input_variables = len(input_data[0])
@@ -69,19 +91,26 @@ print(num_input_variables)
 
 # Prepare input and target tensors
 x_train = torch.tensor(input_data, dtype=torch.float32)
-y_train = torch.tensor(data.iloc[:, -1].values.reshape(-1, 1), dtype=torch.float32)
+#y_train = torch.tensor(data.iloc[:, -1].values.reshape(-1, 1), dtype=torch.float32)
+y_train = torch.tensor(target_data, dtype=torch.float32)
+print("I did not format the data this time, here is the y_train tensor")
+print(y_train)
 
+#create tensors for the testing data too
+x_test = torch.tensor(testingData, dtype=torch.float32)
+y_test = torch.tensor(testingDataTarget, dtype=torch.float32)
 
-#I need to move batch size to hyper parameters
+#I need to move batch size to hyper parameters ONE DAY
 batch_size = 10
 dataset = TensorDataset(x_train,y_train)
-
+testingDataSet = TensorDataset(x_test,y_test)
 #make sure the xtrain and ytrain are properly formatted
 #print("Here is the xtrain")
 #print(x_train)
 #print("Here is the y train")
 print(y_train)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+testDataLoader = DataLoader(testingDataSet, batch_size=batch_size, shuffle=True)
 
 class SimpleNN(nn.Module):
     #FOR SOME REASON THE LSTM LAYER IS NOT WORKING WHY GOD ISN'T IT WORKING????
@@ -173,7 +202,38 @@ for epoch in range(num_epochs):
 #the datagetter too. I just don't like separate files. It makes me confused
 #EVERYTHING SHOULD BE IN FRONT OF ME AT ALL TIMES
 #....I should get a second monitor
+####################TEST THE MODEL TO SHOW HOW ACCURATE IT IS ##############################
+with torch.no_grad():
+    correct = 0
+    total = 0
+    for inputs, targets in testDataLoader:
+        outputs = model(inputs)
+        #compare the accuracy of the prediction to the accuracy of the input
+        for i in range(0,len(outputs)):
+            total += 1
+            if (outputs[i][0] * targets[i][0]) > 0:
+                correct += 1
+            
+            
+        print("Here are the ouputs during the testing")
+        print(outputs)
+        print("Here are the targets during testing")
+        print(targets)
 
+accuracy = 100 * (correct/total)
+print("The accuracy of the model is: ", accuracy)
+
+
+
+
+
+
+
+
+
+
+
+####################SAVE THE MODEL FOR FUTURE USE, SAVE IT LOCALLY##########################
 print("Save the model")
 script_directory = os.path.dirname(os.path.abspath(__file__))
 filepath = os.path.join(script_directory, "HBModel.pth")
