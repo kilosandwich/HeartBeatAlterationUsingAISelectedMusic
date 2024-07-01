@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible"="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Rate Music</title>
+    
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <style>
+        body {
+            background-color: maroon;
+            margin: 0 10%;
+            font-family: sans-serif;
+        }
+    </style>
+  
+   
+</head>
+<body>
+
+    <h2>JavaScript Alert</h2>
+    
+    <button onclick="getmusic()">Start</button>
+    
+    <script>
+    function getmusic() {
+      alert("I am an alert box!");
+    }
+    </script>
+    
+    </body>
+<body>
+    <nav class="navbar">
+        <div class="navdiv">
+            <div class="logo">
+                <a href="#">Heart Rate Music</a>
+            </div>
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="/user_guide">User Guide</a></li>
+                <li><a href="contact.html"></a></li>
+            </ul>
+        </div>
+    </nav>
+    
+<div id="div1">
+
+    <div class="arrow-container">
+        
+        <img src="{{ url_for('static', filename='images/Logo.png') }}" height="200" alt="Heart Rate Monitor">
+        <div class="arrow arrow-up"></div>
+        <div class="arrow arrow-down"></div>
+        <p1>Target Heart Rate</p1>
+        <input type="number" id="targetHR" placeholder="Enter target heart rate" value="80">
+        <button class="start-button">Start</button>
+
+
+        <div id="audioPlayer" style="display:none">
+            <button id="playPauseBtn" class="btn btn-info" onClick="playPause()">Play/Pause Song</button>
+            <button id="skipBtn" class="btn btn-warning" onClick="skipSong()">Skip Song</button>
+            <audio id="audio" src="" controls></audio>
+            <span href="#pod1" onclick="skipAudio('pod1', '90')" class="skip-btn">>></span>
+        </div>
+
+        
+    </div>
+</div>
+    
+
+    
+<div id="div2">
+    <div class="accordion" class="jumbotron text-center">Click to see our Advanced Features</div>
+    <div class="panel">
+        <p>This is the approach path selections</p>
+        <p>SHALLOW <input type="radio" name="path" value="SHALLOW" id="rad1"> </p>
+        <p>LINEAR <input type="radio" name="path" value="LINEAR" id="rad2"> </p>
+        <p>STEEP <input type="radio" name="path" value="STEEP" id="rad3"> </p>
+        <p>Parabola <input type="radio" name="path" value="parabola" id="rad4"> </p>
+
+    <div class="inputs-container">
+        <button id="startRestingHR" class="btn btn-primary">STEP 1.Take a deep inhale and get Resting Heart Rate</button>
+        <p id="restingHRResult"></p>
+        <button id="startCurrentHR" class="btn btn-primary">STEP 2. Now get your Current Heart Rate</button>
+        <p id="currentHRResult"></p>
+
+
+        <h3>Music Recommendation </style></h3> 
+        <label for="targetHR">Target Heart Rate:</label>
+        <input type="number" id="targetHR" placeholder="Enter target heart rate">
+        <label for="currentHR">Current Heart Rate:</label>
+        <input type="number" id="currentHR" placeholder="Enter current heart rate">
+        <label for="restingHR">Resting Heart Rate:</label>
+        <input type="number" id="restingHR" placeholder="Enter resting heart rate">
+        <button id="getMusic" class="btn btn-success">Get Music Recommendation</button>
+        <p id="musicResult"></p>
+
+    </div>
+</div>
+
+ 
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var acc = document.querySelectorAll(".accordion");
+
+            acc.forEach(function(accordion) {
+                accordion.addEventListener("click", function() {
+                    this.classList.toggle("active");
+                    var panel = this.nextElementSibling;
+                    if (panel.style.display === "block") {
+                        panel.style.display = "none";
+                    } else {
+                        panel.style.display = "block";
+                    }
+                });
+            });
+        });
+
+        $(document).ready(function(){
+            $("#startRestingHR").click(function(){
+                $.ajax({
+                    url: "/start_resting_hr_monitor",
+                    method: "GET",
+                    success: function(data){
+                        $("#restingHRResult").text("Resting Heart Rate: " + data.hr);
+                        $("#restingHR").val(data.hr);  
+                    },
+                    error: function(error){
+                        $("#restingHRResult").text("Error for resting heart rate data.");
+                    }
+                });
+            });
+
+            $("#startCurrentHR").click(function(){
+                $.ajax({
+                    url: "/start_current_hr_monitor",
+                    method: "GET",
+                    success: function(data){
+                        $("#currentHRResult").text("Current Heart Rate: " + data.hr);
+                        $("#currentHR").val(data.hr);  // Auto fill in the currentHR input
+                    },
+                    error: function(error){
+                        $("#currentHRResult").text("Error for current heart rate data.");
+                    }
+                });
+            });
+
+            $("#getMusic").click(function(){
+                var targetHR = $("#targetHR").val();
+                var currentHR = $("#currentHR").val();
+                var restingHR = $("#restingHR").val();
+
+                if (targetHR && currentHR && restingHR) {
+                    $.ajax({
+                        url: "/get_music",
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            targetHR: targetHR,
+                            heartRate: currentHR,
+                            restingHR: restingHR
+                        }),
+                        success: function(data){
+                            if(data.selected_music) {
+                                $("#musicResult").text("Selected Music: " + data.selected_music);
+                                $("#audioPlayer").show();
+                                $("#audio").attr("src", data.selected_music);
+                            } else {
+                                $("#musicResult").text("No suitable music found.");
+                            }
+                        },
+                        error: function(error){
+                            $("#musicResult").text("Error gettin music recommendation.");
+                        }
+                    });
+                } else {
+                    $("#musicResult").text("Please enter all heart rate values.");
+                }
+            });
+        });
+
+        var isPlaying = false;
+        function playPause() {
+            var audio = document.getElementById("audio");
+            if (isPlaying) {
+                audio.pause();
+            } else {
+                audio.play();
+            }
+            isPlaying = !isPlaying;
+        }
+
+        function skipSong() {
+            if (recommendedSongs.length > 0) {
+                currentSongIndex = (currentSongIndex + 1) % recommendedSongs.length;
+                loadSong(currentSongIndex);
+                playSong();
+            } else {
+                $("#musicResult").text("No more songs to play.");
+            }
+        }
+
+        function loadSong(index) {
+            const audio = document.getElementById('audio');
+            audio.src = recommendedSongs[index];
+        }
+
+        function playSong() {
+            const audio = document.getElementById('audio');
+            audio.play();
+            isPlaying = true;
+        }
+    </script>
+        <script>
+            const targetHRInput = document.getElementById('targetHR');
+            const arrowUp = document.querySelector('.arrow-up');
+            const arrowDown = document.querySelector('.arrow-down');
+    
+            arrowUp.addEventListener('click', () => {
+                targetHRInput.value = parseInt(targetHRInput.value) + 5;
+            });
+    
+            arrowDown.addEventListener('click', () => {
+                targetHRInput.value = parseInt(targetHRInput.value) - 5;
+            });
+            targetHRInput.addEventListener('input', () => {
+            let value = parseInt(targetHRInput.value);
+            if (value < 40) {
+                targetHRInput.value = 40;
+            } else if (value > 150) {
+                targetHRInput.value = 150;
+            }
+        });
+    
+        </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
