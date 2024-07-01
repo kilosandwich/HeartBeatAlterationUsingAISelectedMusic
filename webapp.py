@@ -1,186 +1,353 @@
 import os
-import pygame
+import glob
+import csv
 import time
-import importlib.util
-from tkinter import Tk, filedialog, Label, Button, Entry, StringVar
-import logging
-import threading
-import json
+import webbrowser
+from threading import Timer
+import numpy as np
+import torch
+import librosa
+from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask_bootstrap import Bootstrap
+from openant.easy.node import Node
+from openant.devices import ANTPLUS_NETWORK_KEY
+from openant.devices.heart_rate import HeartRate, HeartRateData
+from ModelDefinition import SimpleNN  # Ensure to import your model class
+from flask import Flask, render_template, url_for
+from GetHeartRate import HeartRateReader
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+#This is the old webapp updated once again for easy use
+# Initialize Flask app and Bootstrap
+app = Flask(__name__)
+Bootstrap(app)
 
-def execute_script(script_path):
+
+################################################
+#MESSAGE TO JEREMY, THIS SECITON CONTAINS HOW TO IMPLEMENT
+#OLD FEATURES
+#Create the heart rate reader class
+#When the HeartRateReader class is initiailzed
+#it automatically starts up a heart rate feed
+HR = HeartRateReader()
+#This function from the class will read the MOST current heart rate
+#reading from the stream, in the future this will be changed to implement
+#a list instead of a single value, add comments as to where you used this so it can be quickly
+#changed
+current_HR = HR.get_heart_rate_int()
+
+#This function from the class will find the most recent heart rate.
+#BE CAREFUL, THIS WILL RUN A LOOP THAT WILL SOAK UP EVERYTHING
+resting_HR = HR.get_resting_heart_rate()
+
+
+##############################################
+
+# Global variables and constants
+script_dir = os.path.dirname(os.path.abspath(__file__))
+music_dir = os.path.join(script_dir, "/Users/jeremyjohn/Desktop/music")
+csv_file = "music_characteristics.csv"
+TIMEOUT = 60
+XX = 20
+HR = 0  # Global variable that will store heart rate
+
+
+if not os.path.exists(music_dir):
+    os.makedirs(music_dir)
+
+# Define the model
+input_size = 9
+hidden_size = 10
+output_size = 1
+learning_rate = 0.01
+dropout_prob = 0.1
+
+model_path = os.path.join(script_dir, "HBModel.pth")
+
+# Load the model
+model = SimpleNN(input_size, hidden_size, output_size, dropout_prob)
+try:
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
+    print("Model loaded and set to evaluation mode.")
+except Exception as e:
+    print(f"Error loading model: {e}")
+
+# Route for the main page
+@app.route("/myapp")
+def index():
+    music_files = get_music_files()
+    return render_template('index.html', music_files=music_files)
+
+# Function to get music files
+def get_music_files():
+    pattern = "*.mp3"
+    files = glob.glob(os.path.join(music_dir, pattern))
+    return [{'file_name': os.path.basename(file), 'file_path': f'/music/{os.path.basename(file)}'} for file in files]
+
+
+def load_audio_segment(audioInfo, samplingRate, startTime, durationTime):
+    return audioInfo[int(startTime * samplingRate):int((startTime + durationTime) * samplingRate)]
+
+
+def compute_tempo(audioInfo, samplingRate):
     try:
-        spec = importlib.util.spec_from_file_location("module.name", script_path)
-        script_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(script_module)
-        logging.info(f"Successfully executed script: {script_path}")
+        tempo, _ = librosa.beat.beat_track(y=audioInfo, sr=samplingRate)
+        return float(tempo)
     except Exception as e:
-        logging.error(f"Error running script {script_path}: {e}")
-
-def read_file(file_path):
-    try:
-        with open(file_path, 'r') as file:
-            return file.read().strip()
-    except FileNotFoundError:
-        logging.error(f"File not found: {file_path}")
+        print(f"Error computing tempo: {e}")
         return None
 
-pygame.mixer.init()
 
-def play_mp3(file_path):
+def compute_average_pitch(audioInfo, samplingRate):
     try:
-        pygame.mixer.music.load(file_path)
-        pygame.mixer.music.play()
-        while pygame.mixer.music.get_busy():
-            time.sleep(1)
-        logging.info(f"Finished playing MP3 file: {file_path}")
-    except pygame.error as e:
-        logging.error(f"Error playing {file_path}: {e}")
+        pitches, _ = librosa.piptrack(y=audioInfo, sr=samplingRate)
+        return float(np.mean(pitches[pitches > 0]))
+    except Exception as e:
+        print(f"Error computing pitch: {e}")
+        return None
 
-def find_mp3_files(directory):
-    mp3_files = []
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".mp3"):
-                mp3_files.append(os.path.join(root, file))
-    return mp3_files
 
-def choose_music_folder():
-    folder_selected = filedialog.askdirectory()
-    return folder_selected
+def get_characteristics(filepath):
+    if not os.path.isfile(filepath):
+        print(f"Error: {filepath} is not a file.")
+        return [None] * 7
 
-def choose_csv_file():
-    file_selected = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
-    return file_selected
-
-def process_mp3_file(mp3_file, results, resting_heart_rate):
-    logging.info(f"Processing MP3 file: {mp3_file}")
-
-    execute_script("GetCharacteristics.py")
-    execute_script("GetRestingHeartRate.py")
-
-    characteristics_str = read_file("characteristics.txt")
-    resting_heart_rate_str = read_file("resting_heart_rate.txt")
-
-    if characteristics_str is None or resting_heart_rate_str is None:
-        return
-
-    characteristics = eval(characteristics_str)
-    resting_heart_rate = float(resting_heart_rate_str)
-
-    update_feedbacks(mp3_file, characteristics, resting_heart_rate, None)
-
-    play_mp3(mp3_file)
-
-    execute_script("GetRestingHeartRate.py")
-
-    heart_rate_str = read_file("resting_heart_rate.txt")
-    if heart_rate_str is None:
-        return
-
-    heart_rate = float(heart_rate_str)
-
-    update_feedbacks(mp3_file, characteristics, resting_heart_rate, heart_rate)
-
-    change_in_heart_rate = heart_rate - resting_heart_rate
-
-    results.append({
-        "file": mp3_file,
-        "characteristics": characteristics,
-        "resting_heart_rate": resting_heart_rate,
-        "heart_rate": heart_rate,
-        "change_in_heart_rate": change_in_heart_rate
-    })
-
-def save_results(results, csv_file_path):
     try:
-        with open(csv_file_path, 'a') as f:
-            for result in results:
-                f.write(f"{result['file']},{result['characteristics']},{result['resting_heart_rate']},{result['heart_rate']},{result['change_in_heart_rate']}\n")
-        logging.info(f"Results appended to {csv_file_path}")
-    except IOError as e:
-        logging.error(f"Error writing to CSV file: {e}")
+        y, samplingRate = librosa.load(filepath)
+        songLength = librosa.get_duration(y=y, sr=samplingRate)
+        avgTempo = compute_tempo(y, samplingRate)
+        first_30s_audio = load_audio_segment(y, samplingRate, 0, 30)
+        last_30s_audio = load_audio_segment(y, samplingRate, max(0, songLength - 30), 30)
+        tempo_first_30 = compute_tempo(first_30s_audio, samplingRate)
+        tempo_last_30 = compute_tempo(last_30s_audio, samplingRate)
+        avgPitch = compute_average_pitch(y, samplingRate)
+        pitch_first_30 = compute_average_pitch(first_30s_audio, samplingRate)
+        pitch_last_30 = compute_average_pitch(last_30s_audio, samplingRate)
 
-def main():
-    def start_processing():
-        resting_heart_rate = float(resting_heart_rate_var.get())
-        music_folder = music_folder_var.get()
-        csv_file_path = csv_file_var.get()
+        return [
+            songLength,
+            avgTempo,
+            tempo_first_30,
+            tempo_last_30,
+            avgPitch,
+            pitch_first_30,
+            pitch_last_30
+        ]
+    except Exception as e:
+        print(f"Error processing file {filepath}: {e}")
+        return [None] * 7
 
-        if not music_folder:
-            logging.error("No music folder selected. Exiting.")
-            return
 
-        mp3_files = find_mp3_files(music_folder)
-        if not mp3_files:
-            logging.error("No MP3 files found in the selected folder.")
-            return
+def generate_csv(directory_path, csv_file):
+    pattern = "*.mp3"
+    audio_files = glob.glob(os.path.join(directory_path, pattern))
+    
+    with open(csv_file, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["File", "Song Length", "Average Tempo", "Tempo First 30s", "Tempo Last 30s", "Average Pitch", "Pitch First 30s", "Pitch Last 30s"])
+        print("I am attempting to write to: ", csv_file)
+        for audio_file in audio_files:
+            print(f"Processing file: {audio_file}")
+            characteristics = get_characteristics(audio_file)
+            print("Here are the file characteristics")
+            print(characteristics)
+            musicFilePath = str(os.path.basename(audio_file))
+            rowToWrite = characteristics.copy()
+            rowToWrite.insert(0, musicFilePath)
+            print("This is the row we are attempting to write: ", rowToWrite)
+            writer.writerow(rowToWrite)
+            print(f"Characteristics for {audio_file}: {characteristics}")
 
-        results = []
-        threads = []
 
-        for mp3_file in mp3_files:
-            thread = threading.Thread(target=process_mp3_file, args=(mp3_file, results, resting_heart_rate))
-            thread.start()
-            threads.append(thread)
+def get_heart_rate(device_id=0):
+    HR = 0
+    while True:
+        try:
+            node = Node()
+            node.set_network_key(0x00, ANTPLUS_NETWORK_KEY)
+            device = HeartRate(node, device_id=device_id)
+            break
+        except Exception as e:
+            print("Failed to initialize node, trying again!")
 
-        for thread in threads:
-            thread.join()
+    def on_found():
+        print(f"Device {device} found and receiving")
 
-        save_results(results, csv_file_path)
+    def on_device_data(page: int, page_name: str, data):
+        nonlocal HR
+        if isinstance(data, HeartRateData):
+            print(data.heart_rate)
+            HR = data.heart_rate
+            device.on_device_data = None  
 
-    root = Tk()
-    root.title("Trainer App")
+    device.on_found = on_found
+    device.on_device_data = on_device_data
 
-    resting_heart_rate_label = Label(root, text="Resting Heart Rate")
-    resting_heart_rate_label.pack()
-    resting_heart_rate_var = StringVar()
-    resting_heart_rate_entry = Entry(root, textvariable=resting_heart_rate_var)
-    resting_heart_rate_entry.pack()
-    resting_heart_rate_feedback = Label(root, text="", fg="blue")
-    resting_heart_rate_feedback.pack()
+    try:
+        print(f"Starting {device}, press Ctrl-C to finish")
+        node.start()
+    except Exception as e:
+        print("Closing ANT+ device...")
+    finally:
+        device.close_channel()
+        node.stop()
 
-    music_folder_label = Label(root, text="Music Folder")
-    music_folder_label.pack()
-    music_folder_var = StringVar()
-    music_folder_button = Button(root, text="Select Music Folder", command=lambda: [music_folder_var.set(choose_music_folder()), music_folder_feedback.config(text=f"Selected folder: {music_folder_var.get()}")])
-    music_folder_button.pack()
-    music_folder_feedback = Label(root, text="", fg="blue")
-    music_folder_feedback.pack()
+    return HR
 
-    csv_file_label = Label(root, text="Training Data CSV File")
-    csv_file_label.pack()
-    csv_file_var = StringVar()
-    csv_file_button = Button(root, text="Select CSV File", command=lambda: [csv_file_var.set(choose_csv_file()), csv_file_feedback.config(text=f"Selected file: {csv_file_var.get()}")])
-    csv_file_button.pack()
-    csv_file_feedback = Label(root, text="", fg="blue")
-    csv_file_feedback.pack()
 
-    start_button = Button(root, text="Start Processing", command=lambda: [start_processing(), start_feedback.config(text="Processing started...")])
-    start_button.pack()
-    start_feedback = Label(root, text="", fg="blue")
-    start_feedback.pack()
+def get_resting_HR(device_id=0):
+    TIMEOUT = 60
+    start_time = time.time()
+    heart_rates = []
+    resting_heart_rate = None
+    node = None
+    device = None
 
-    current_song_feedback = Label(root, text="", fg="blue")
-    current_song_feedback.pack()
+    while True:
+        try:
+            node = Node()
+            node.set_network_key(0x00, ANTPLUS_NETWORK_KEY)
+            device = HeartRate(node, device_id=device_id)
+            break
+        except Exception as e:
+            print("Failed to initialize node, trying again!")
 
-    music_characteristics_feedback = Label(root, text="", fg="blue")
-    music_characteristics_feedback.pack()
+    def on_found():
+        print(f"Device {device} found and receiving")
 
-    recorded_heartbeat_feedback = Label(root, text="", fg="blue")
-    recorded_heartbeat_feedback.pack()
+    def on_device_data(page: int, page_name: str, data):
+        nonlocal TIMEOUT
+        nonlocal start_time
+        nonlocal heart_rates
+        nonlocal resting_heart_rate  
 
-    ending_heartbeat_feedback = Label(root, text="", fg="blue")
-    ending_heartbeat_feedback.pack()
+        if isinstance(data, HeartRateData):
+            current_rate = data.heart_rate
+            print(f"Heart rate update {current_rate} bpm")
+            heart_rates.append(current_rate)
+            print(heart_rates)
+            if len(heart_rates) > 1 and (max(heart_rates) - min(heart_rates)) <= 3:
+                resting_heart_rate = int(np.mean(heart_rates))  
+                device.close_channel()
+                node.stop()
+            
+            if (time.time() - start_time) >= TIMEOUT:
+                resting_heart_rate = -1  
+                device.close_channel()
+                node.stop()
 
-    def update_feedbacks(mp3_file, characteristics, resting_heart_rate, heart_rate):
-        current_song_feedback.config(text=f"Currently playing: {mp3_file}")
-        music_characteristics_feedback.config(text=f"Music characteristics: {characteristics}")
-        recorded_heartbeat_feedback.config(text=f"Recorded heartbeat before playing: {resting_heart_rate}")
-        ending_heartbeat_feedback.config(text=f"Recorded ending heartbeat: {heart_rate}")
+    device.on_found = on_found
+    device.on_device_data = on_device_data
 
-    root.mainloop()
+    try:
+        print(f"Starting {device}, press Ctrl-C to finish")
+        node.start()
+    except KeyboardInterrupt:
+        print("Closing ANT+ device...")
+    finally:
+        if device:
+            try:
+                device.close_channel()
+            except Exception as e:
+                print(f"Error closing device channel: {e}")
+        if node:
+            try:
+                node.stop()
+            except Exception as e:
+                print(f"Error stopping node: {e}")
+
+    return resting_heart_rate
+
+
+
+def selectMusic(targetHR, heartRate, restingHR, csvLocation):
+    targetHR = int(targetHR)
+    heartRate = int(heartRate)
+    restingHR = int(restingHR)
+
+    goalHRChange = targetHR - heartRate
+
+    with open(csvLocation, 'r') as file:
+        reader = csv.reader(file)
+        rows = list(reader)
+    del rows[0]  # Remove the header row
+
+    currentSong = [rows[0][0], 0]  # Initialize with the first song and a neutral value
+    for musicRow in rows:
+        try:
+            tempList = [float(musicRow[i]) for i in range(1, len(musicRow))]
+            tempList.append(heartRate)
+            tempList.append(restingHR)
+            tempTensor = torch.tensor(tempList, dtype=torch.float32)
+            tempPrediction = model(tempTensor).item()  # Get the prediction from the model
+            print(f"Song: {musicRow[0]}, Prediction: {tempPrediction}")
+            tempPrediction = [musicRow[0], tempPrediction]
+            if goalHRChange > 0:
+                if tempPrediction[1] > currentSong[1]:
+                    currentSong = tempPrediction.copy()  # Select song that increases HR
+            else:
+                if tempPrediction[1] < currentSong[1]:
+                    currentSong = tempPrediction.copy()  # Select song that decreases HR
+        except Exception as e:
+            print(f"Error selecting music for row {musicRow}: {e}")
+    print(f"Selected Song: {currentSong[0]}, Prediction: {currentSong[1]}")
+    return currentSong[0]
+
+
+@app.route("/start_resting_hr_monitor", methods=["GET"])
+def start_resting_hr_monitor():
+    hr = get_resting_HR()
+    return jsonify({"hr": hr, "type": "resting"})
+
+
+@app.route("/start_current_hr_monitor", methods=["GET"])
+def start_current_hr_monitor():
+    hr = get_heart_rate()
+    return jsonify({"hr": hr, "type": "current"})
+
+
+@app.route("/get_music", methods=["POST"])
+def get_music():
+    data = request.json
+    targetHR = data['targetHR']
+    heartRate = data['heartRate']
+    restingHR = data['restingHR']
+    print(f"Received request: Target HR: {targetHR}, Current HR: {heartRate}, Resting HR: {restingHR}")
+    csvLocation = os.path.join(script_dir, "music_characteristics.csv")
+    selected_music = selectMusic(targetHR, heartRate, restingHR, csvLocation)
+    if selected_music:
+        music_path = f'/music/{selected_music}'
+        return jsonify({'selected_music': music_path})
+    return jsonify({'error': 'No song selected'})
+
+@app.route('/music/<filename>')
+def play_music(filename):
+    return send_from_directory(music_dir, filename)
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/user_guide')
+def user_guide():
+    return render_template('user_guide.html')
+
+
+
+@app.route('/advanced_features')
+def advanced_features():
+    return render_template('advanced_features.html')
 
 if __name__ == "__main__":
-    main()
+    directory_path = os.path.join(script_dir, "/Users/jeremyjohn/Desktop/music")
+    csv_file = os.path.join(script_dir, csv_file)
+    generate_csv(directory_path, csv_file)
+
+    def open_browser():
+        webbrowser.open_new("http://127.0.0.1:5000/myapp")
+    
+    Timer(1, open_browser).start()
+    
+    app.run(port=5000, debug=True)
+
+
+
