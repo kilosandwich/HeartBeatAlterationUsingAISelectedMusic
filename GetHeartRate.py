@@ -47,18 +47,26 @@ class HeartRateReader:
         TIMEOUT = 60
         start_time = time.time()
         resting_heart_rate = None
+        heart_rates = []
 
         while True:
             self.read_heart_rate()
             heart_rates = self.get_heart_rate()
+            print(f"Heart rates collected: {heart_rates}")
+
             if heart_rates and len(heart_rates) > 1 and (max(heart_rates) - min(heart_rates)) <= 3:
                 resting_heart_rate = int(np.mean(heart_rates))
+                print(f"Resting heart rate determined: {resting_heart_rate}")
                 return resting_heart_rate
 
             if (time.time() - start_time) >= TIMEOUT:
                 resting_heart_rate = -1
+                print(f"Timeout reached without determining resting heart rate. Setting resting heart rate to: {resting_heart_rate}")
                 return resting_heart_rate
+
+            time.sleep(1)  
 
 if __name__ == "__main__":
     reader = HeartRateReader()
-    reader.read_heart_rate()
+    resting_hr = reader.get_resting_heart_rate()
+    print(f"Resting Heart Rate: {resting_hr}")
