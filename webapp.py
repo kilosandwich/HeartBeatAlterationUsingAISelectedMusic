@@ -31,10 +31,7 @@ HR = 0  # Global variable that will store heart rate
 if not os.path.exists(music_dir):
     os.makedirs(music_dir)
 
-## HeartRateReader Class
-#this is the heaert rate reader class as well as the updated routes
 # Initialize the HeartRateReader class
-#these are the new for the resting heart rate and current heart rate
 HR = HeartRateReader()
 
 @app.route("/start_resting_hr_monitor", methods=["GET"])
@@ -49,18 +46,15 @@ def start_current_hr_monitor():
 
 @app.route("/start", methods=["POST"])
 def start():
-    print("You have hit the start button!")
-    print("********************************88**********************************")
     data = request.json
     targetHR = data['targetHR']
+    restingHR = data['restingHR']
+    approachPath = data.get('approachPath')
 
     # Get the current heart rate
     currentHR = HR.get_heart_rate_int()
 
-    # Get the resting heart rate from THE INPUT BOX 
-    restingHR = 70
-
-    print(f"Received request: Target HR: {targetHR}, Current HR: {currentHR}, Resting HR: {restingHR}")
+    print(f"Received request: Target HR: {targetHR}, Current HR: {currentHR}, Resting HR: {restingHR}, Approach Path: {approachPath}")
 
     csvLocation = os.path.join(script_dir, "music_characteristics.csv")
     selected_music = selectMusic(targetHR, currentHR, restingHR, csvLocation)
@@ -69,7 +63,6 @@ def start():
         music_path = f'/music/{selected_music}'
         return jsonify({'selected_music': music_path})
     return jsonify({'error': 'No song selected'})
-
 
 # Route for the main page
 @app.route("/myapp")
@@ -83,12 +76,11 @@ def get_music_files():
     files = glob.glob(os.path.join(music_dir, pattern))
     return [{'file_name': os.path.basename(file), 'file_path': f'/music/{os.path.basename(file)}'} for file in files]
 
-
 def generate_csv(directory_path, csv_file):
     pattern = "*.mp3"
     audio_files = glob.glob(os.path.join(directory_path, pattern))
     
-    with open(csv_file, mode='w', newline='') as file:
+    with open(csv_file, mode='w', newline='') as file):
         writer = csv.writer(file)
         writer.writerow(["File", "Song Length", "Average Tempo", "Tempo First 30s", "Tempo Last 30s", "Average Pitch", "Pitch First 30s", "Pitch Last 30s"])
         print("I am attempting to write to: ", csv_file)
@@ -112,7 +104,7 @@ def get_music():
     restingHR = data['restingHR']
     print(f"Received request: Target HR: {targetHR}, Current HR: {heartRate}, Resting HR: {restingHR}")
     csvLocation = os.path.join(script_dir, "music_characteristics.csv")
-    selected_music = selectMusic(targetHR, heartRate, restingHR, csvLocation, approachPath)
+    selected_music = selectMusic(targetHR, heartRate, restingHR, csvLocation)
     if selected_music:
         music_path = f'/music/{selected_music}'
         return jsonify({'selected_music': music_path})
