@@ -16,7 +16,13 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 import random
 
 
+#################CONSTANTS FOR CONFIGURATION###########################
+SHALLOW = 1
+LINEAR = 2
+STEEP = 3
 
+
+#######################################################################
 
 
 #########################################################################
@@ -62,29 +68,6 @@ import csv
 def selectMusic(targetHR, heartRate, restingHR, csvLocation, approachPath = "default"):
     
     goalHRChange = targetHR - heartRate
-    
-    #################CONSTANTS FOR CONFIGURATION###########################
-    #initialize variables
-    SHALLOW = 0
-    LINEAR = 0
-    STEEP = 0
-    
-    #change value of variable based upon direction of HR change
-    if goalHRChange > 0:
-        SHALLOW = 1
-        LINEAR = 2
-        STEEP = 3
-    else:
-        SHALLOW = -1
-        LINEAR = -2
-        STEEP = -3
-    #######################################################################
-    
-    
-    
-    
-    
-    
     #if the approach path is 'rollercoaster' change the goal to a randomly
     #positive or negative version of itself
     #then change the approach path to fastest to achieve that goal
@@ -99,6 +82,8 @@ def selectMusic(targetHR, heartRate, restingHR, csvLocation, approachPath = "def
             goalHRChange = random.choice([goalHRChange, goalHRChange-5])
     
     #ITERATE THROUGH THE CSV FILE
+    print("ATTEMPTING TO ACCESS CSV FROM ===========================")
+    print(csvLocation)
     #PUT ALL THE ROWS INTO A LIST
     with open(csvLocation, 'r') as file:
         reader = csv.reader(file)
@@ -111,6 +96,8 @@ def selectMusic(targetHR, heartRate, restingHR, csvLocation, approachPath = "def
     #the order is [filepath, changeinHR, songLength]
     #an improbably small song length is given for the purpose of creating comically
     #inaccurate change in HRs so they are replaced rapidly.
+    print("Rows==================================================================:")
+    print(rows)
     currentSong = [ rows[0][0], 0,0.0001]
     
     #This is a nested function for calculating the gap between two points
@@ -149,9 +136,6 @@ def selectMusic(targetHR, heartRate, restingHR, csvLocation, approachPath = "def
         currentChangeRate = currentSongHRChange/currentSongLength
         
         if approachPath == "Shallow":
-
-            
-            
             #CurrentSongGap between SHALLOW
             tempGap = calculateGap(SHALLOW, tempChangeRate)
             currentGap = calculateGap(SHALLOW,currentChangeRate)

@@ -1,6 +1,7 @@
 import os
 import csv
 import glob
+from GetCharacteristics import get_characteristics
 
 def generate_csv(directory_path, csv_file):
     pattern = "*.mp3"
@@ -12,6 +13,9 @@ def generate_csv(directory_path, csv_file):
             next(reader)  
             for row in reader:
                 processed_files.add(row[0])
+        print("These are the files we found in: ", directory_path, " that we tried to write to ", csv_file)
+        print(processed_files)
+        print("=================================================")
 
     with open(csv_file, mode='a', newline='') as file:
         writer = csv.writer(file)

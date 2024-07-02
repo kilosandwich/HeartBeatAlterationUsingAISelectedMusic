@@ -15,9 +15,10 @@ def get_resting_HR(device_id=0):
             node = Node()
             node.set_network_key(0x00, ANTPLUS_NETWORK_KEY)
             device = HeartRate(node, device_id=device_id)
+            print("Initialized node and device successfully")
             break
         except Exception as e:
-            print("Failed to initialize node, trying again!")
+            print(f"Failed to initialize node, trying again! Error: {e}")
 
     def on_found():
         print(f"Device {device} found and receiving")
@@ -30,16 +31,18 @@ def get_resting_HR(device_id=0):
 
         if isinstance(data, HeartRateData):
             current_rate = data.heart_rate
-            print(f"Heart rate update {current_rate} bpm")
+            print(f"Heart rate update: {current_rate} bpm")
             heart_rates.append(current_rate)
-            print(heart_rates)
+            print(f"Heart rates so far: {heart_rates}")
             if len(heart_rates) > 1 and (max(heart_rates) - min(heart_rates)) <= 3:
                 resting_heart_rate = int(np.mean(heart_rates))  
+                print(f"Resting heart rate determined: {resting_heart_rate} bpm")
                 device.close_channel()
                 node.stop()
             
             if (time.time() - start_time) >= TIMEOUT:
                 resting_heart_rate = -1  
+                print(f"Timeout reached: {TIMEOUT} seconds")
                 device.close_channel()
                 node.stop()
 
@@ -56,6 +59,7 @@ def get_resting_HR(device_id=0):
         node.stop()
 
     return resting_heart_rate  
+
 if __name__ == "__main__":
     resting_hr = get_resting_HR()
     print(f"Resting Heart Rate: {resting_hr}")

@@ -5,7 +5,7 @@ def load_audio_segment(audioInfo, samplingRate, startTime, durationTime):
     return audioInfo[int(startTime * samplingRate):int((startTime + durationTime) * samplingRate)]
 
 def compute_tempo(audioInfo, samplingRate):
-    return librosa.beat.beat_track(y=audioInfo, sr=samplingRate)[0]
+    return librosa.beat.beat_track(y=audioInfo, sr=samplingRate)[0][0]
 
 def compute_average_pitch(audioInfo, samplingRate):
     pitches, _ = librosa.piptrack(y=audioInfo, sr=samplingRate)
@@ -22,6 +22,16 @@ def get_characteristics(filepath):
     avgPitch = compute_average_pitch(y, samplingRate)
     pitch_first_30 = compute_average_pitch(first_30s_audio, samplingRate)
     pitch_last_30 = compute_average_pitch(last_30s_audio, samplingRate)
+    print("Here are the music characteristics we gathered")
+    print([
+        avgTempo,
+        tempo_first_30,
+        tempo_last_30,
+        songLength,
+        pitch_first_30,
+        pitch_last_30,
+        avgPitch
+    ])
 
     return [
         avgTempo,

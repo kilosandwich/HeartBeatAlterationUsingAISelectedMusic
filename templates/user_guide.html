@@ -86,18 +86,19 @@ div{
 
         <h1>Welcome to the user guide page</h1>
         <h2>Here we will be showing you how to use our web app</h2>
-        <h3>Set your Garmin device to broadcast mode</h3>
-        <h4>1. On the heart rate widget hold up</h4>
-        <h5>2. Select options and go to broadcast heart rate</h5>
-        <h6>3. Pair your device to your Garmin Ant+ device</h6>
- 
+        <h3>Here is a tutuorial vidoe on how to use the site</h3>
+        <video controls autoplay muted loop width="500">
+            
+            <source src="{{ url_for('static', filename='videos/welcome.mp4') }}" type="video/mp4">
+            Your browser does not support HTML5 video.
+        </video>
 
         <img src="{{ url_for('static', filename='images/heart.png') }}" height="500" alt="Heart Rate Monitor">
         
            
         <div class="custom-paragraph"> 
             <p>
-                <li>Navigation Bar - The navbar can take you to the user-guide.</li>
+                <li>Navigation Bar - The navbar can take you home or to the user-guide.</li>
                 <li>Target Heart Rate - The target heart rate will be set for the user at 80.</li>
                 <li>+/- - The up and down arrows move in intervals of 5. They allow the user to change the heart rate.</li>
                 <li>Start - The start button is what the user presses when they are ready to get their music choice.</li>
@@ -106,10 +107,10 @@ div{
         </div>
         <img src="{{ url_for('static', filename='images/Features.png') }}" height="500" alt="Heart Rate Monitor">
         <p>
-            <li>The shallow path will take allow you to change your heart rate for a certain range</li>
-            <li>The linear path will take allow you to change your heart rate for a certain range</li>
-            <li>The steep path will take allow you to change your heart rate for a certain range</li>
-            <li>The parobola path will take allow you to change your heart rate for a certain range</li>
+            <li>The shallow path will take allow you to change hour heart rate for a certain range</li>
+            <li>The linear path will take allow you to change hour heart rate for a certain range</li>
+            <li>The steep path will take allow you to change hour heart rate for a certain range</li>
+            <li>The parobola path will take allow you to change hour heart rate for a certain range</li>
         </p>
 
 

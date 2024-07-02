@@ -16,6 +16,7 @@ from ModelDefinition import SimpleNN  # Ensure to import your model class
 from GetHeartRate import HeartRateReader
 from selectMusic import selectMusic
 from GetCharacteristics import get_characteristics
+from GenerateCSV import generate_csv
 
 # Initialize Flask app and Bootstrap
 app = Flask(__name__)
@@ -23,7 +24,8 @@ Bootstrap(app)
 
 # Global variables and constants
 script_dir = os.path.dirname(os.path.abspath(__file__))
-music_dir = os.path.join(script_dir, "static/music")
+music_dir = os.path.join(script_dir, "music")
+print(music_dir)
 csv_file = os.path.join(script_dir, "music_characteristics.csv")
 TIMEOUT = 60
 HR = 0  # Global variable that will store heart rate
@@ -47,8 +49,8 @@ def start_current_hr_monitor():
 @app.route("/start", methods=["POST"])
 def start():
     data = request.json
-    targetHR = data['targetHR']
-    restingHR = data['restingHR']
+    targetHR = int(data['targetHR'])
+    restingHR = int(data['restingHR'])
     approachPath = data.get('approachPath')
 
     # Get the current heart rate
@@ -76,25 +78,6 @@ def get_music_files():
     files = glob.glob(os.path.join(music_dir, pattern))
     return [{'file_name': os.path.basename(file), 'file_path': f'/music/{os.path.basename(file)}'} for file in files]
 
-def generate_csv(directory_path, csv_file):
-    pattern = "*.mp3"
-    audio_files = glob.glob(os.path.join(directory_path, pattern))
-    
-    with open(csv_file, mode='w', newline='') as file):
-        writer = csv.writer(file)
-        writer.writerow(["File", "Song Length", "Average Tempo", "Tempo First 30s", "Tempo Last 30s", "Average Pitch", "Pitch First 30s", "Pitch Last 30s"])
-        print("I am attempting to write to: ", csv_file)
-        for audio_file in audio_files:
-            print(f"Processing file: {audio_file}")
-            characteristics = get_characteristics(audio_file)
-            print("Here are the file characteristics")
-            print(characteristics)
-            musicFilePath = str(os.path.basename(audio_file))
-            rowToWrite = characteristics.copy()
-            rowToWrite.insert(0, musicFilePath)
-            print("This is the row we are attempting to write: ", rowToWrite)
-            writer.writerow(rowToWrite)
-            print(f"Characteristics for {audio_file}: {characteristics}")
 
 @app.route("/get_music", methods=["POST"])
 def get_music():
@@ -127,7 +110,7 @@ def advanced_features():
     return render_template('advanced_features.html')
 
 if __name__ == "__main__":
-    directory_path = os.path.join(script_dir, "/Users/jeremyjohn/Desktop/music")
+    directory_path = os.path.join(script_dir, music_dir)
     csv_file = os.path.join(script_dir, csv_file)
     generate_csv(directory_path, csv_file)
 
@@ -138,7 +121,3 @@ if __name__ == "__main__":
         Timer(1, open_browser).start()
     
     app.run(port=5000)
-
-
-
-
