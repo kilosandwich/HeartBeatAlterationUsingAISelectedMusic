@@ -3,7 +3,7 @@ import glob
 import csv
 import time
 import webbrowser
-from threading import Timer
+from threading import Timer, Thread
 import numpy as np
 import torch
 import librosa
@@ -13,43 +13,17 @@ from openant.easy.node import Node
 from openant.devices import ANTPLUS_NETWORK_KEY
 from openant.devices.heart_rate import HeartRate, HeartRateData
 from ModelDefinition import SimpleNN  # Ensure to import your model class
-from flask import Flask, render_template, url_for
-from GetHeartRate import HeartRateReader
 
-#This is the old webapp updated once again for easy use
 # Initialize Flask app and Bootstrap
 app = Flask(__name__)
 Bootstrap(app)
 
-
-################################################
-#MESSAGE TO JEREMY, THIS SECITON CONTAINS HOW TO IMPLEMENT
-#OLD FEATURES
-#Create the heart rate reader class
-#When the HeartRateReader class is initiailzed
-#it automatically starts up a heart rate feed
-HR = HeartRateReader()
-#This function from the class will read the MOST current heart rate
-#reading from the stream, in the future this will be changed to implement
-#a list instead of a single value, add comments as to where you used this so it can be quickly
-#changed
-current_HR = HR.get_heart_rate_int()
-
-#This function from the class will find the most recent heart rate.
-#BE CAREFUL, THIS WILL RUN A LOOP THAT WILL SOAK UP EVERYTHING
-resting_HR = HR.get_resting_heart_rate()
-
-
-##############################################
-
 # Global variables and constants
 script_dir = os.path.dirname(os.path.abspath(__file__))
-music_dir = os.path.join(script_dir, "/Users/jeremyjohn/Desktop/music")
-csv_file = "music_characteristics.csv"
+music_dir = os.path.join(script_dir, "static/music")
+csv_file = os.path.join(script_dir, "music_characteristics.csv")
 TIMEOUT = 60
-XX = 20
 HR = 0  # Global variable that will store heart rate
-
 
 if not os.path.exists(music_dir):
     os.makedirs(music_dir)
@@ -72,6 +46,102 @@ try:
 except Exception as e:
     print(f"Error loading model: {e}")
 
+## HeartRateReader Class
+#this is the heaert rate reader class as well as the updated routes
+class HeartRateReader:
+    def __init__(self, device_id=0):
+        self.device_id = device_id
+        self.HR = 0
+        self.resting_heart_rate = None
+        self.node = None
+        self.device = None
+        self.heart_rates = []
+        self.thread = Thread(target=self.init_device)
+        self.thread.start()
+
+    def init_device(self):
+        while True:
+            try:
+                self.node = Node()
+                self.node.set_network_key(0x00, ANTPLUS_NETWORK_KEY)
+                self.device = HeartRate(self.node, device_id=self.device_id)
+                break
+            except Exception as e:
+                print("Failed to initialize node, trying again!")
+
+        self.device.on_found = self.on_found
+        self.device.on_device_data = self.on_device_data
+        try:
+            print(f"Starting {self.device}, press Ctrl-C to finish")
+            self.node.start()
+        except Exception as e:
+            print("Closing ANT+ device...")
+        finally:
+            self.device.close_channel()
+            self.node.stop()
+
+    def on_found(self):
+        print(f"Device {self.device} found and receiving")
+
+    def on_device_data(self, page: int, page_name: str, data):
+        if isinstance(data, HeartRateData):
+            print(data.heart_rate)
+            self.HR = data.heart_rate
+            self.heart_rates.append(data.heart_rate)
+            if len(self.heart_rates) > 1 and (max(self.heart_rates) - min(self.heart_rates)) <= 3:
+                self.resting_heart_rate = int(np.mean(self.heart_rates))
+
+    def get_heart_rate_int(self):
+        return self.HR
+
+    def get_resting_heart_rate(self, timeout=60):
+        start_time = time.time()
+        self.heart_rates = []
+        self.resting_heart_rate = None
+
+        while (time.time() - start_time) < timeout:
+            if self.resting_heart_rate is not None:
+                return self.resting_heart_rate
+            time.sleep(1)  # Sleep to prevent tight loop
+
+        return -1  
+
+# Initialize the HeartRateReader class
+#these are the new for the resting heart rate and current heart rate
+HR = HeartRateReader()
+
+@app.route("/start_resting_hr_monitor", methods=["GET"])
+def start_resting_hr_monitor():
+    hr = HR.get_resting_heart_rate()
+    return jsonify({"hr": hr, "type": "resting"})
+
+@app.route("/start_current_hr_monitor", methods=["GET"])
+def start_current_hr_monitor():
+    hr = HR.get_heart_rate_int()
+    return jsonify({"hr": hr, "type": "current"})
+
+@app.route("/start", methods=["POST"])
+def start():
+    data = request.json
+    targetHR = data['targetHR']
+
+    # Get the current heart rate
+    currentHR = HR.get_heart_rate_int()
+
+    # Get the resting heart rate from feed
+    restingHR = HR.get_resting_heart_rate()
+
+    print(f"Received request: Target HR: {targetHR}, Current HR: {currentHR}, Resting HR: {restingHR}")
+
+    csvLocation = os.path.join(script_dir, "music_characteristics.csv")
+    selected_music = selectMusic(targetHR, currentHR, restingHR, csvLocation)
+
+    if selected_music:
+        music_path = f'/music/{selected_music}'
+        return jsonify({'selected_music': music_path})
+    return jsonify({'error': 'No song selected'})
+
+
 # Route for the main page
 @app.route("/myapp")
 def index():
@@ -84,10 +154,8 @@ def get_music_files():
     files = glob.glob(os.path.join(music_dir, pattern))
     return [{'file_name': os.path.basename(file), 'file_path': f'/music/{os.path.basename(file)}'} for file in files]
 
-
 def load_audio_segment(audioInfo, samplingRate, startTime, durationTime):
     return audioInfo[int(startTime * samplingRate):int((startTime + durationTime) * samplingRate)]
-
 
 def compute_tempo(audioInfo, samplingRate):
     try:
@@ -97,7 +165,6 @@ def compute_tempo(audioInfo, samplingRate):
         print(f"Error computing tempo: {e}")
         return None
 
-
 def compute_average_pitch(audioInfo, samplingRate):
     try:
         pitches, _ = librosa.piptrack(y=audioInfo, sr=samplingRate)
@@ -105,7 +172,6 @@ def compute_average_pitch(audioInfo, samplingRate):
     except Exception as e:
         print(f"Error computing pitch: {e}")
         return None
-
 
 def get_characteristics(filepath):
     if not os.path.isfile(filepath):
@@ -137,7 +203,6 @@ def get_characteristics(filepath):
         print(f"Error processing file {filepath}: {e}")
         return [None] * 7
 
-
 def generate_csv(directory_path, csv_file):
     pattern = "*.mp3"
     audio_files = glob.glob(os.path.join(directory_path, pattern))
@@ -157,108 +222,6 @@ def generate_csv(directory_path, csv_file):
             print("This is the row we are attempting to write: ", rowToWrite)
             writer.writerow(rowToWrite)
             print(f"Characteristics for {audio_file}: {characteristics}")
-
-
-def get_heart_rate(device_id=0):
-    HR = 0
-    while True:
-        try:
-            node = Node()
-            node.set_network_key(0x00, ANTPLUS_NETWORK_KEY)
-            device = HeartRate(node, device_id=device_id)
-            break
-        except Exception as e:
-            print("Failed to initialize node, trying again!")
-
-    def on_found():
-        print(f"Device {device} found and receiving")
-
-    def on_device_data(page: int, page_name: str, data):
-        nonlocal HR
-        if isinstance(data, HeartRateData):
-            print(data.heart_rate)
-            HR = data.heart_rate
-            device.on_device_data = None  
-
-    device.on_found = on_found
-    device.on_device_data = on_device_data
-
-    try:
-        print(f"Starting {device}, press Ctrl-C to finish")
-        node.start()
-    except Exception as e:
-        print("Closing ANT+ device...")
-    finally:
-        device.close_channel()
-        node.stop()
-
-    return HR
-
-
-def get_resting_HR(device_id=0):
-    TIMEOUT = 60
-    start_time = time.time()
-    heart_rates = []
-    resting_heart_rate = None
-    node = None
-    device = None
-
-    while True:
-        try:
-            node = Node()
-            node.set_network_key(0x00, ANTPLUS_NETWORK_KEY)
-            device = HeartRate(node, device_id=device_id)
-            break
-        except Exception as e:
-            print("Failed to initialize node, trying again!")
-
-    def on_found():
-        print(f"Device {device} found and receiving")
-
-    def on_device_data(page: int, page_name: str, data):
-        nonlocal TIMEOUT
-        nonlocal start_time
-        nonlocal heart_rates
-        nonlocal resting_heart_rate  
-
-        if isinstance(data, HeartRateData):
-            current_rate = data.heart_rate
-            print(f"Heart rate update {current_rate} bpm")
-            heart_rates.append(current_rate)
-            print(heart_rates)
-            if len(heart_rates) > 1 and (max(heart_rates) - min(heart_rates)) <= 3:
-                resting_heart_rate = int(np.mean(heart_rates))  
-                device.close_channel()
-                node.stop()
-            
-            if (time.time() - start_time) >= TIMEOUT:
-                resting_heart_rate = -1  
-                device.close_channel()
-                node.stop()
-
-    device.on_found = on_found
-    device.on_device_data = on_device_data
-
-    try:
-        print(f"Starting {device}, press Ctrl-C to finish")
-        node.start()
-    except KeyboardInterrupt:
-        print("Closing ANT+ device...")
-    finally:
-        if device:
-            try:
-                device.close_channel()
-            except Exception as e:
-                print(f"Error closing device channel: {e}")
-        if node:
-            try:
-                node.stop()
-            except Exception as e:
-                print(f"Error stopping node: {e}")
-
-    return resting_heart_rate
-
-
 
 def selectMusic(targetHR, heartRate, restingHR, csvLocation):
     targetHR = int(targetHR)
@@ -293,19 +256,6 @@ def selectMusic(targetHR, heartRate, restingHR, csvLocation):
     print(f"Selected Song: {currentSong[0]}, Prediction: {currentSong[1]}")
     return currentSong[0]
 
-
-@app.route("/start_resting_hr_monitor", methods=["GET"])
-def start_resting_hr_monitor():
-    hr = get_resting_HR()
-    return jsonify({"hr": hr, "type": "resting"})
-
-
-@app.route("/start_current_hr_monitor", methods=["GET"])
-def start_current_hr_monitor():
-    hr = get_heart_rate()
-    return jsonify({"hr": hr, "type": "current"})
-
-
 @app.route("/get_music", methods=["POST"])
 def get_music():
     data = request.json
@@ -323,6 +273,7 @@ def get_music():
 @app.route('/music/<filename>')
 def play_music(filename):
     return send_from_directory(music_dir, filename)
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -330,8 +281,6 @@ def home():
 @app.route('/user_guide')
 def user_guide():
     return render_template('user_guide.html')
-
-
 
 @app.route('/advanced_features')
 def advanced_features():
@@ -348,6 +297,7 @@ if __name__ == "__main__":
     Timer(1, open_browser).start()
     
     app.run(port=5000, debug=True)
+
 
 
 
