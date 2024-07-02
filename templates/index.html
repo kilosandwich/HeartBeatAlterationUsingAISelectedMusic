@@ -21,13 +21,13 @@
 </head>
 <body>
 
-    <h2>JavaScript Alert</h2>
     
-    <button onclick="getmusic()">Start</button>
+    
+    
     
     <script>
-    function getmusic() {
-      alert("I am an alert box!");
+    function ApproachPath() {
+      alert("Error has occured!");
     }
     </script>
     
@@ -41,21 +41,20 @@
             <ul>
                 <li><a href="#">Home</a></li>
                 <li><a href="/user_guide">User Guide</a></li>
-                <li><a href="contact.html"></a></li>
+                
             </ul>
         </div>
     </nav>
     
 <div id="div1">
-
-    <div class="arrow-container">
-        
+    <div class="arrow-container">    
         <img src="{{ url_for('static', filename='images/Logo.png') }}" height="200" alt="Heart Rate Monitor">
         <div class="arrow arrow-up"></div>
         <div class="arrow arrow-down"></div>
         <p1>Target Heart Rate</p1>
         <input type="number" id="targetHR" placeholder="Enter target heart rate" value="80">
         <button class="start-button">Start</button>
+        
 
 
         <div id="audioPlayer" style="display:none">
@@ -75,34 +74,55 @@
     <div class="accordion" class="jumbotron text-center">Click to see our Advanced Features</div>
     <div class="panel">
         <p>This is the approach path selections</p>
-        <p>SHALLOW <input type="radio" name="path" value="SHALLOW" id="rad1"> </p>
-        <p>LINEAR <input type="radio" name="path" value="LINEAR" id="rad2"> </p>
-        <p>STEEP <input type="radio" name="path" value="STEEP" id="rad3"> </p>
-        <p>Parabola <input type="radio" name="path" value="parabola" id="rad4"> </p>
 
-    <div class="inputs-container">
-        <button id="startRestingHR" class="btn btn-primary">STEP 1.Take a deep inhale and get Resting Heart Rate</button>
-        <p id="restingHRResult"></p>
-        <button id="startCurrentHR" class="btn btn-primary">STEP 2. Now get your Current Heart Rate</button>
-        <p id="currentHRResult"></p>
+        <p>SHALLOW <input type="radio" name="path" value="SHALLOW" id="rad1" onclick="ApproachPath('SHALLOW')"> </p>
+        <p>LINEAR <input type="radio" name="path" value="LINEAR" id="rad2" onclick="ApproachPath('LINEAR')"> </p>
+        <p>STEEP <input type="radio" name="path" value="STEEP" id="rad3" onclick="ApproachPath('STEEP')"> </p>
+        <p>Parabola <input type="radio" name="path" value="Parabola" id="rad4" onclick="ApproachPath('Parabola')"> </p>
+        <p1>resting Heart Rate</p1>
+        <input type="number" id="targetHR" placeholder="Enter resting rate" value="60">
 
 
-        <h3>Music Recommendation </style></h3> 
-        <label for="targetHR">Target Heart Rate:</label>
-        <input type="number" id="targetHR" placeholder="Enter target heart rate">
-        <label for="currentHR">Current Heart Rate:</label>
-        <input type="number" id="currentHR" placeholder="Enter current heart rate">
-        <label for="restingHR">Resting Heart Rate:</label>
-        <input type="number" id="restingHR" placeholder="Enter resting heart rate">
-        <button id="getMusic" class="btn btn-success">Get Music Recommendation</button>
-        <p id="musicResult"></p>
+
+
+
 
     </div>
 </div>
 
  
+<script>
+    function startMonitoring() {
+        var targetHR = $("#targetHR").val();
 
-    <script>
+        if (!targetHR) {
+            alert("Please enter a target heart rate.");
+            return;
+        }
+
+        $.ajax({
+            url: "/start",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                targetHR: targetHR
+            }),
+            success: function(data) {
+                if(data.selected_music) {
+                    $("#musicResult").text("Selected Music: " + data.selected_music);
+                    $("#audioPlayer").show();
+                    $("#audio").attr("src", data.selected_music);
+                } else {
+                    $("#musicResult").text("No suitable music found.");
+                }
+            },
+            error: function(error) {
+                $("#musicResult").text("Error getting music recommendation.");
+            }
+        });
+    }
+    
+        
         document.addEventListener("DOMContentLoaded", function() {
             var acc = document.querySelectorAll(".accordion");
 
@@ -220,11 +240,23 @@
             const arrowDown = document.querySelector('.arrow-down');
     
             arrowUp.addEventListener('click', () => {
-                targetHRInput.value = parseInt(targetHRInput.value) + 5;
+                targetHRInput.value = parseInt(targetHRInput.value) + 10;
+                let value = parseInt(targetHRInput.value);
+            if (value < 40) {
+                targetHRInput.value = 40;
+            } else if (value > 150) {
+                targetHRInput.value = 150;
+            }
             });
     
             arrowDown.addEventListener('click', () => {
-                targetHRInput.value = parseInt(targetHRInput.value) - 5;
+                targetHRInput.value = parseInt(targetHRInput.value) - 10;
+                let value = parseInt(targetHRInput.value);
+            if (value < 40) {
+                targetHRInput.value = 40;
+            } else if (value > 150) {
+                targetHRInput.value = 150;
+            }
             });
             targetHRInput.addEventListener('input', () => {
             let value = parseInt(targetHRInput.value);
