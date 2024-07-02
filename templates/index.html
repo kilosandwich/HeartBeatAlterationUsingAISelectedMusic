@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible"="IE=edge">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Heart Rate Music</title>
     
@@ -16,22 +16,7 @@
             font-family: sans-serif;
         }
     </style>
-  
-   
 </head>
-<body>
-
-    
-    
-    
-    
-    <script>
-    function ApproachPath() {
-      alert("Error has occured!");
-    }
-    </script>
-    
-    </body>
 <body>
     <nav class="navbar">
         <div class="navdiv">
@@ -41,88 +26,81 @@
             <ul>
                 <li><a href="#">Home</a></li>
                 <li><a href="/user_guide">User Guide</a></li>
-                
             </ul>
         </div>
     </nav>
     
-<div id="div1">
-    <div class="arrow-container">    
-        <img src="{{ url_for('static', filename='images/Logo.png') }}" height="200" alt="Heart Rate Monitor">
-        <div class="arrow arrow-up"></div>
-        <div class="arrow arrow-down"></div>
-        <p1>Target Heart Rate</p1>
-        <input type="number" id="targetHR" placeholder="Enter target heart rate" value="80">
-        <button class="start-button">Start</button>
-        
+    <div id="div1">
+        <div class="arrow-container">    
+            <img src="{{ url_for('static', filename='images/Logo.png') }}" height="200" alt="Heart Rate Monitor">
+            <div class="arrow arrow-up"></div>
+            <div class="arrow arrow-down"></div>
+            <p>Target Heart Rate</p>
+            <input type="number" id="targetHR" placeholder="Enter target heart rate" value="80">
+            <p>Resting Heart Rate</p>
+            <input type="number" id="restingHR" placeholder="Enter resting heart rate" value="60">
+            <button class="start-button" onclick="startMonitoring()">Start</button>
 
-
-        <div id="audioPlayer" style="display:none">
-            <button id="playPauseBtn" class="btn btn-info" onClick="playPause()">Play/Pause Song</button>
-            <button id="skipBtn" class="btn btn-warning" onClick="skipSong()">Skip Song</button>
-            <audio id="audio" src="" controls></audio>
-            <span href="#pod1" onclick="skipAudio('pod1', '90')" class="skip-btn">>></span>
+            <div id="audioPlayer" style="display:none">
+                <button id="playPauseBtn" class="btn btn-info" onClick="playPause()">Play/Pause Song</button>
+                <button id="skipBtn" class="btn btn-warning" onClick="skipSong()">Skip Song</button>
+                <audio id="audio" src="" controls></audio>
+                <span href="#pod1" onclick="skipAudio('pod1', '90')" class="skip-btn">>></span>
+            </div>
         </div>
-
-        
     </div>
-</div>
     
-
-    
-<div id="div2">
-    <div class="accordion" class="jumbotron text-center">Click to see our Advanced Features</div>
-    <div class="panel">
-        <p>This is the approach path selections</p>
-
-        <p>SHALLOW <input type="radio" name="path" value="SHALLOW" id="rad1" onclick="ApproachPath('SHALLOW')"> </p>
-        <p>LINEAR <input type="radio" name="path" value="LINEAR" id="rad2" onclick="ApproachPath('LINEAR')"> </p>
-        <p>STEEP <input type="radio" name="path" value="STEEP" id="rad3" onclick="ApproachPath('STEEP')"> </p>
-        <p>Parabola <input type="radio" name="path" value="Parabola" id="rad4" onclick="ApproachPath('Parabola')"> </p>
-        <p1>resting Heart Rate</p1>
-        <input type="number" id="targetHR" placeholder="Enter resting rate" value="60">
-
-
-
-
-
-
+    <div id="div2">
+        <div class="accordion jumbotron text-center">Click to see our Advanced Features</div>
+        <div class="panel">
+            <p>This is the approach path selections</p>
+            <p>SHALLOW <input type="radio" name="path" value="SHALLOW" id="rad1" onclick="ApproachPath('SHALLOW')"> </p>
+            <p>LINEAR <input type="radio" name="path" value="LINEAR" id="rad2" onclick="ApproachPath('LINEAR')"> </p>
+            <p>STEEP <input type="radio" name="path" value="STEEP" id="rad3" onclick="ApproachPath('STEEP')"> </p>
+            <p>Parabola <input type="radio" name="path" value="Parabola" id="rad4" onclick="ApproachPath('Parabola')"> </p>
+        </div>
     </div>
-</div>
 
- 
-<script>
-    function startMonitoring() {
-        var targetHR = $("#targetHR").val();
+    <script>
+        function startMonitoring() {
+            var targetHR = $("#targetHR").val();
+            var restingHR = $("#restingHR").val();
+            var approachPath = $("input[name='path']:checked").val();
 
-        if (!targetHR) {
-            alert("Please enter a target heart rate.");
-            return;
+            if (!targetHR) {
+                alert("Please enter a target heart rate.");
+                return;
+            }
+
+            if (!restingHR) {
+                alert("Please enter a resting heart rate.");
+                return;
+            }
+
+            $.ajax({
+                url: "/start",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    targetHR: targetHR,
+                    restingHR: restingHR,
+                    approachPath: approachPath
+                }),
+                success: function(data) {
+                    if(data.selected_music) {
+                        $("#musicResult").text("Selected Music: " + data.selected_music);
+                        $("#audioPlayer").show();
+                        $("#audio").attr("src", data.selected_music);
+                    } else {
+                        $("#musicResult").text("No suitable music found.");
+                    }
+                },
+                error: function(error) {
+                    $("#musicResult").text("Error getting music recommendation.");
+                }
+            });
         }
 
-        $.ajax({
-            url: "/start",
-            method: "POST",
-            contentType: "application/json",
-            data: JSON.stringify({
-                targetHR: targetHR
-            }),
-            success: function(data) {
-                if(data.selected_music) {
-                    $("#musicResult").text("Selected Music: " + data.selected_music);
-                    $("#audioPlayer").show();
-                    $("#audio").attr("src", data.selected_music);
-                } else {
-                    $("#musicResult").text("No suitable music found.");
-                }
-            },
-            error: function(error) {
-                $("#musicResult").text("Error getting music recommendation.");
-            }
-        });
-    }
-    
-        
         document.addEventListener("DOMContentLoaded", function() {
             var acc = document.querySelectorAll(".accordion");
 
@@ -193,7 +171,7 @@
                             }
                         },
                         error: function(error){
-                            $("#musicResult").text("Error gettin music recommendation.");
+                            $("#musicResult").text("Error getting music recommendation.");
                         }
                     });
                 } else {
@@ -233,32 +211,13 @@
             audio.play();
             isPlaying = true;
         }
-    </script>
-        <script>
-            const targetHRInput = document.getElementById('targetHR');
-            const arrowUp = document.querySelector('.arrow-up');
-            const arrowDown = document.querySelector('.arrow-down');
-    
-            arrowUp.addEventListener('click', () => {
-                targetHRInput.value = parseInt(targetHRInput.value) + 10;
-                let value = parseInt(targetHRInput.value);
-            if (value < 40) {
-                targetHRInput.value = 40;
-            } else if (value > 150) {
-                targetHRInput.value = 150;
-            }
-            });
-    
-            arrowDown.addEventListener('click', () => {
-                targetHRInput.value = parseInt(targetHRInput.value) - 10;
-                let value = parseInt(targetHRInput.value);
-            if (value < 40) {
-                targetHRInput.value = 40;
-            } else if (value > 150) {
-                targetHRInput.value = 150;
-            }
-            });
-            targetHRInput.addEventListener('input', () => {
+
+        const targetHRInput = document.getElementById('targetHR');
+        const arrowUp = document.querySelector('.arrow-up');
+        const arrowDown = document.querySelector('.arrow-down');
+
+        arrowUp.addEventListener('click', () => {
+            targetHRInput.value = parseInt(targetHRInput.value) + 10;
             let value = parseInt(targetHRInput.value);
             if (value < 40) {
                 targetHRInput.value = 40;
@@ -266,10 +225,31 @@
                 targetHRInput.value = 150;
             }
         });
-    
-        </script>
+
+        arrowDown.addEventListener('click', () => {
+            targetHRInput.value = parseInt(targetHRInput.value) - 10;
+            let value = parseInt(targetHRInput.value);
+            if (value < 40) {
+                targetHRInput.value = 40;
+            } else if (value > 150) {
+                targetHRInput.value = 150;
+            }
+        });
+
+        targetHRInput.addEventListener('input', () => {
+            let value = parseInt(targetHRInput.value);
+            if (value < 40) {
+                targetHRInput.value = 40;
+            } else if (value > 150) {
+                targetHRInput.value = 150;
+            }
+        });
+    </script>
 </body>
 </html>
+
+
+
 
 
 
