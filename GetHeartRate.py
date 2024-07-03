@@ -6,12 +6,13 @@ from HeartRateFeed import start_monitor
 
 class HeartRateReader:
     def __init__(self):
-        # Create the queue in the initialization function
+        # Create the queues in the initialization function
         self.heart_rate_data = queue.Queue(maxsize=1)
+        self.resting_heart_rate_data = queue.Queue(maxsize=1)
         # This is the current heart rate as a list, it is not the queue!
         self.current_heart_rate = None
-        # Create the thread for the monitor, pass the queue as an argument into the thread
-        self.monitor_thread = threading.Thread(target=start_monitor, args=(self.heart_rate_data,))
+        # Create the thread for the monitor, pass both queues as arguments into the thread
+        self.monitor_thread = threading.Thread(target=start_monitor, args=(self.heart_rate_data, self.resting_heart_rate_data))
         self.monitor_thread.daemon = True
         self.monitor_thread.start()
 
@@ -44,29 +45,30 @@ class HeartRateReader:
         return self.current_heart_rate[0] if self.current_heart_rate else None
 
     def get_resting_heart_rate(self):
-        TIMEOUT = 60
-        start_time = time.time()
-        resting_heart_rate = None
-        heart_rates = []
+        print("Attempting to retrieve resting heart rate...")
 
         while True:
-            self.read_heart_rate()
-            heart_rates = self.get_heart_rate()
-            print(f"Heart rates collected: {heart_rates}")
-
-            if heart_rates and len(heart_rates) > 1 and (max(heart_rates) - min(heart_rates)) <= 3:
-                resting_heart_rate = int(np.mean(heart_rates))
-                print(f"Resting heart rate determined: {resting_heart_rate}")
-                return resting_heart_rate
-
-            if (time.time() - start_time) >= TIMEOUT:
-                resting_heart_rate = -1
-                print(f"Timeout reached without determining resting heart rate. Setting resting heart rate to: {resting_heart_rate}")
-                return resting_heart_rate
-
-            time.sleep(1)  
+            print("Help I am stuck in a loop")
+            try:
+                if not self.resting_heart_rate_data.empty():
+                    resting_heart_rate = self.resting_heart_rate_data.get()
+                    print(f"Resting Heart Rate Retrieved: {resting_heart_rate}")
+                    return resting_heart_rate
+                else:
+                    print("Waiting for resting heart rate data...")
+                    time.sleep(1)
+            except Exception as e:
+                print(f"Error retrieving resting heart rate: {e}")
+                return None
 
 if __name__ == "__main__":
     reader = HeartRateReader()
-    resting_hr = reader.get_resting_heart_rate()
+    while True:
+        time.sleep(1)
+
+    """resting_hr = reader.get_resting_heart_rate()
     print(f"Resting Heart Rate: {resting_hr}")
+    time.sleep(10)
+    hr = reader.get_heart_rate_int()
+    print(f"Resting Heart Rate: {hr}")
+"""
