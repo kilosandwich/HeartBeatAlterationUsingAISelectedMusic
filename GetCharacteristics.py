@@ -9,7 +9,7 @@ def compute_tempo(audioInfo, samplingRate):
 
 def compute_average_pitch(audioInfo, samplingRate):
     pitches, _ = librosa.piptrack(y=audioInfo, sr=samplingRate)
-    return np.mean(pitches[pitches > 0])
+    return np.mean(pitches)
 
 def get_characteristics(filepath):
     print("I am attempting to analyze: ", filepath)
