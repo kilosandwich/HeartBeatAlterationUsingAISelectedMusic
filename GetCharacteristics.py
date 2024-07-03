@@ -5,7 +5,18 @@ def load_audio_segment(audioInfo, samplingRate, startTime, durationTime):
     return audioInfo[int(startTime * samplingRate):int((startTime + durationTime) * samplingRate)]
 
 def compute_tempo(audioInfo, samplingRate):
-    return librosa.beat.beat_track(y=audioInfo, sr=samplingRate)[0]
+    tempo = librosa.beat.beat_track(y=audioInfo, sr=samplingRate)[0]
+    try:
+        #On some machines, tempo is inexplicably converted into an array, therefore the default
+        #solution around this is to ATTEMPT to see if there is an array there. If there is not,
+        #then everything is good
+
+        #Try to see if there is an array
+        tempo = tempo[0]
+    except Exception as e:
+        #There is not an array
+        tempo = tempo
+    return tempo
 
 def compute_average_pitch(audioInfo, samplingRate):
     pitches, _ = librosa.piptrack(y=audioInfo, sr=samplingRate)
@@ -50,6 +61,6 @@ def get_characteristics(filepath):
 #TEST IT
 if __name__ == "__main__":
     print("I have started up!")
-    filepath = "Nixon.mp3"
+    filepath = "C:/Users/ahmad/OneDrive/Desktop/Project/HeartBeatAlterationUsingAISelectedMusic-main/Nixon.mp3"
     characteristics = get_characteristics(filepath)
     print(characteristics)
