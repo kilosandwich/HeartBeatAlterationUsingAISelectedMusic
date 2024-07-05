@@ -15,6 +15,35 @@
             margin: 0 10%;
             font-family: sans-serif;
         }
+        .upload-box {
+            border: 2px dashed #ccc;
+            border-radius: 20px;
+            width: 100%;
+            height: 100px;
+            text-align: center;
+            line-height: 100px;
+            font-size: 16px;
+            color: #ccc;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .upload-box.dragover {
+            border-color: #333;
+            color: #333;
+        }
+        .approach-button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #ccc;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .approach-button.selected {
+            background-color: #333;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -24,7 +53,7 @@
                 <a href="#">Heart Rate Music</a>
             </div>
             <ul>
-                <li><a href="#">Home</a></li>
+                <li><a href="/">Home</a></li>
                 <li><a href="/user_guide">User Guide</a></li>
             </ul>
         </div>
@@ -37,8 +66,10 @@
             <div class="arrow arrow-down"></div>
             <p>Target Heart Rate</p>
             <input type="number" id="targetHR" placeholder="Enter target heart rate" value="80">
-            <p>Resting Heart Rate</p>
-            <input type="number" id="restingHR" placeholder="Enter resting heart rate" value="60">
+            <div class="upload-box" id="uploadBox">
+                Drag and drop MP3 files here or click to upload
+                <input type="file" id="fileInput" accept=".mp3" style="display: none;">
+            </div>
             <button class="start-button" onclick="startMonitoring()">Start</button>
 
             <div id="audioPlayer" style="display:none">
@@ -54,18 +85,57 @@
         <div class="accordion jumbotron text-center">Click to see our Advanced Features</div>
         <div class="panel">
             <p>This is the approach path selections</p>
-            <p>SHALLOW <input type="radio" name="path" value="SHALLOW" id="rad1" onclick="ApproachPath('SHALLOW')"> </p>
-            <p>LINEAR <input type="radio" name="path" value="LINEAR" id="rad2" onclick="ApproachPath('LINEAR')"> </p>
-            <p>STEEP <input type="radio" name="path" value="STEEP" id="rad3" onclick="ApproachPath('STEEP')"> </p>
-            <p>Parabola <input type="radio" name="path" value="Parabola" id="rad4" onclick="ApproachPath('Parabola')"> </p>
+            <button class="approach-button" id="random" onclick="selectApproachPath('random')">RANDOM</button>
+            <button class="approach-button selected" id="SHALLOW" onclick="selectApproachPath('SHALLOW')">SHALLOW</button>
+            <button class="approach-button" id="LINEAR" onclick="selectApproachPath('LINEAR')">LINEAR</button>
+            <button class="approach-button" id="STEEP" onclick="selectApproachPath('STEEP')">STEEP</button>
+            <button class="approach-button" id="Parabola" onclick="selectApproachPath('Parabola')">Parabola</button>
+            <button class="approach-button" id="Rollercoaster" onclick="selectApproachPath('Rollercoaster')">Rollercoaster</button>
+
+            
+            <div class="arrow arrow-up" id="restingHR-up"></div>
+            <div class="arrow arrow-down" id="restingHR-down"></div>
+            <label for="restingHR">Resting Heart Rate:</label>
+            <input type="number" id="restingHR" placeholder="Enter resting heart rate" value='60'>
+            <button id="startRestingHR" class="btn btn-primary">Press to get resting heart rate</button>
+            <p id="restingHRResult"></p>
         </div>
     </div>
 
+    <div id="approachPathResult"></div>
+
     <script>
+        var selectedApproachPath = 'SHALLOW';
+
+        function selectApproachPath(path) {
+            selectedApproachPath = path;
+            document.querySelectorAll('.approach-button').forEach(button => {
+                button.classList.remove('selected');
+            });
+            document.getElementById(path).classList.add('selected');
+
+            // Show approach path message
+            $.ajax({
+                url: "/get_approach_path_message",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    approachPath: selectedApproachPath
+                }),
+                success: function(data) {
+                    $("#approachPathResult").html(`<p>${data.message}</p>`);
+                },
+                error: function(error) {
+                    $("#approachPathResult").text("Error getting approach path message.");
+                }
+            });
+        }
+
         function startMonitoring() {
             var targetHR = $("#targetHR").val();
             var restingHR = $("#restingHR").val();
-            var approachPath = $("input[name='path']:checked").val();
+
+            console.log("Start Monitoring: Target HR =", targetHR, "Resting HR =", restingHR, "Approach Path =", selectedApproachPath);
 
             if (!targetHR) {
                 alert("Please enter a target heart rate.");
@@ -84,16 +154,15 @@
                 data: JSON.stringify({
                     targetHR: targetHR,
                     restingHR: restingHR,
-                    approachPath: approachPath
+                    approachPath: selectedApproachPath
                 }),
                 success: function(data) {
-                    if(data.selected_music) {
-                        $("#musicResult").text("Selected Music: " + data.selected_music);
-                        $("#audioPlayer").show();
-                        $("#audio").attr("src", data.selected_music);
-                    } else {
-                        $("#musicResult").text("No suitable music found.");
+                    console.log(data);
+                    let output = '';
+                    for (let path in data) {
+                        output += `<p>${data[path].message}: ${data[path].selected_music}</p>`;
                     }
+                    $("#musicResult").html(output);
                 },
                 error: function(error) {
                     $("#musicResult").text("Error getting music recommendation.");
@@ -115,9 +184,65 @@
                     }
                 });
             });
-        });
 
-        $(document).ready(function(){
+            var uploadBox = document.getElementById('uploadBox');
+            var fileInput = document.getElementById('fileInput');
+
+            uploadBox.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadBox.classList.add('dragover');
+            });
+
+            uploadBox.addEventListener('dragleave', function(e) {
+                uploadBox.classList.remove('dragover');
+            });
+
+            uploadBox.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadBox.classList.remove('dragover');
+                var files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+
+            uploadBox.addEventListener('click', function(e) {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', function(e) {
+                var files = fileInput.files;
+                handleFiles(files);
+            });
+
+            function handleFiles(files) {
+                for (var i = 0; i < files.length; i++) {
+                    if (files[i].type !== 'audio/mpeg') {
+                        alert('Only MP3 files are allowed!');
+                        return;
+                    }
+                    uploadFile(files[i]);
+                }
+            }
+
+            function uploadFile(file) {
+                var formData = new FormData();
+                formData.append('file', file);
+
+                $.ajax({
+                    url: '/upload',
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        alert('File uploaded successfully!');
+                    },
+                    error: function(error) {
+                        alert('Error uploading file');
+                    }
+                });
+            }
+        
+
             $("#startRestingHR").click(function(){
                 $.ajax({
                     url: "/start_resting_hr_monitor",
@@ -215,6 +340,9 @@
         const targetHRInput = document.getElementById('targetHR');
         const arrowUp = document.querySelector('.arrow-up');
         const arrowDown = document.querySelector('.arrow-down');
+        const restingHRInput = document.getElementById('restingHR');
+        const restingHRUp = document.getElementById('restingHR-up');
+        const restingHRDown = document.getElementById('restingHR-down');
 
         arrowUp.addEventListener('click', () => {
             targetHRInput.value = parseInt(targetHRInput.value) + 10;
@@ -235,6 +363,25 @@
                 targetHRInput.value = 150;
             }
         });
+        restingHRUp.addEventListener('click', () => {
+            restingHRInput.value = parseInt(restingHRInput.value) + 10;
+            let value = parseInt(restingHRInput.value);
+            if (value < 50) {
+                restingHRInput.value = 50;
+            } else if (value > 150) {
+                restingHRInput.value = 150;
+            }
+        });
+
+        restingHRDown.addEventListener('click', () => {
+            restingHRInput.value = parseInt(restingHRInput.value) - 10;
+            let value = parseInt(restingHRInput.value);
+            if (value < 50) {
+                restingHRInput.value = 50;
+            } else if (value > 150) {
+                restingHRInput.value = 150;
+            }
+        });
 
         targetHRInput.addEventListener('input', () => {
             let value = parseInt(targetHRInput.value);
@@ -244,6 +391,36 @@
                 targetHRInput.value = 150;
             }
         });
+        restingHRInput.addEventListener('input', () => {
+            let value = parseInt(restingHRInput.value);
+            if (value < 50) {
+                restingHRInput.value = 50;
+            } else if (value > 150) {
+                restingHRInput.value = 150;
+            }
+        });
     </script>
+    <div id="musicResult"></div>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
