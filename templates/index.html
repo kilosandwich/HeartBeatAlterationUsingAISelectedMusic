@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="X-UA-Compatible" IE="edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Heart Rate Music</title>
     
@@ -66,17 +66,14 @@
             <div class="arrow arrow-down"></div>
             <p>Target Heart Rate</p>
             <input type="number" id="targetHR" placeholder="Enter target heart rate" value="80">
-            <div class="upload-box" id="uploadBox">
-                Drag and drop MP3 files here or click to upload
-                <input type="file" id="fileInput" accept=".mp3" style="display: none;">
-            </div>
+            
             <button class="start-button" onclick="startMonitoring()">Start</button>
 
             <div id="audioPlayer" style="display:none">
                 <button id="playPauseBtn" class="btn btn-info" onClick="playPause()">Play/Pause Song</button>
                 <button id="skipBtn" class="btn btn-warning" onClick="skipSong()">Skip Song</button>
                 <audio id="audio" src="" controls></audio>
-                <span href="#pod1" onclick="skipAudio('pod1', '90')" class="skip-btn">>></span>
+                <div id="songName" style="margin-top: 10px; font-weight: bold;"></div> <!-- Song name will appear here -->
             </div>
         </div>
     </div>
@@ -91,8 +88,8 @@
             <button class="approach-button" id="STEEP" onclick="selectApproachPath('STEEP')">STEEP</button>
             <button class="approach-button" id="Parabola" onclick="selectApproachPath('Parabola')">Parabola</button>
             <button class="approach-button" id="Rollercoaster" onclick="selectApproachPath('Rollercoaster')">Rollercoaster</button>
+            <div id="approachPathResult"></div>
 
-            
             <div class="arrow arrow-up" id="restingHR-up"></div>
             <div class="arrow arrow-down" id="restingHR-down"></div>
             <label for="restingHR">Resting Heart Rate:</label>
@@ -101,8 +98,13 @@
             <p id="restingHRResult"></p>
         </div>
     </div>
-
-    <div id="approachPathResult"></div>
+    
+    <div id="div3">
+        <div class="upload-box" id="uploadBox">
+            Drag and drop MP3 files here or click to upload
+            <input type="file" id="fileInput" accept=".mp3" style="display: none;">
+        </div>
+    </div>
 
     <script>
         var selectedApproachPath = 'SHALLOW';
@@ -158,11 +160,19 @@
                 }),
                 success: function(data) {
                     console.log(data);
-                    let output = '';
-                    for (let path in data) {
-                        output += `<p>${data[path].message}: ${data[path].selected_music}</p>`;
+                    if (data.error) {
+                        $("#musicResult").text(data.error);
+                    } else {
+                        if (data.selected_music) {
+                            let songPath = data.selected_music;
+                            let songName = songPath.substring(songPath.lastIndexOf('/') + 1);
+                            $("#audioPlayer").show();
+                            $("#audio").attr("src", songPath);
+                            $("#songName").text(`Now Playing: ${songName}`);
+                        } else {
+                            $("#musicResult").text("No suitable music found.");
+                        }
                     }
-                    $("#musicResult").html(output);
                 },
                 error: function(error) {
                     $("#musicResult").text("Error getting music recommendation.");
@@ -170,7 +180,7 @@
             });
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
+        $(document).ready(function() {
             var acc = document.querySelectorAll(".accordion");
 
             acc.forEach(function(accordion) {
@@ -242,17 +252,20 @@
                 });
             }
         
-
             $("#startRestingHR").click(function(){
                 $.ajax({
                     url: "/start_resting_hr_monitor",
                     method: "GET",
                     success: function(data){
-                        $("#restingHRResult").text("Resting Heart Rate: " + data.hr);
-                        $("#restingHR").val(data.hr);  
+                        if (data.hr !== undefined) {
+                            $("#restingHR").val(data.hr); // Update the input field with the live heart rate
+                            $("#restingHRResult").text("Resting Heart Rate: " + data.hr);
+                        } else {
+                            $("#restingHRResult").text("Error getting resting heart rate.");
+                        }
                     },
                     error: function(error){
-                        $("#restingHRResult").text("Error for resting heart rate data.");
+                        $("#restingHRResult").text("Error getting resting heart rate.");
                     }
                 });
             });
@@ -291,6 +304,8 @@
                                 $("#musicResult").text("Selected Music: " + data.selected_music);
                                 $("#audioPlayer").show();
                                 $("#audio").attr("src", data.selected_music);
+                                let songName = data.selected_music.substring(data.selected_music.lastIndexOf('/') + 1);
+                                $("#songName").text(`Now Playing: ${songName}`);
                             } else {
                                 $("#musicResult").text("No suitable music found.");
                             }
@@ -341,8 +356,8 @@
         const arrowUp = document.querySelector('.arrow-up');
         const arrowDown = document.querySelector('.arrow-down');
         const restingHRInput = document.getElementById('restingHR');
-        const restingHRUp = document.getElementById('restingHR-up');
-        const restingHRDown = document.getElementById('restingHR-down');
+        const restingHRUp = document.querySelector('.arrow-up#restingHR-up');
+        const restingHRDown = document.querySelector('.arrow-down#restingHR-down');
 
         arrowUp.addEventListener('click', () => {
             targetHRInput.value = parseInt(targetHRInput.value) + 10;
@@ -400,9 +415,13 @@
             }
         });
     </script>
-    <div id="musicResult"></div>
+    
 </body>
 </html>
+
+
+
+
 
 
 
