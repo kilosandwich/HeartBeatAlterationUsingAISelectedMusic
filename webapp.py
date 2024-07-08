@@ -29,6 +29,20 @@ music_dir = os.path.join(script_dir, "music")
 csv_file = os.path.join(script_dir, "music_characteristics.csv")
 TIMEOUT = 60
 HR = 0  # Global variable that will store heart rate
+input_size = 9
+hidden_size = 10
+output_size = 1
+learning_rate = 0.01
+dropout_prob = 0.1
+
+model_path = os.path.join(script_dir, "HBModel.pth")
+model = SimpleNN(input_size, hidden_size, output_size, dropout_prob)
+try:
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
+    print("Model loaded and set to evaluation mode.")
+except Exception as e:
+    print(f"Error loading model: {e}")
 
 if not os.path.exists(music_dir):
     os.makedirs(music_dir)
@@ -40,6 +54,7 @@ ALLOWED_EXTENSIONS = {'mp3'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# Flask route for uploading files 
 @app.route("/upload", methods=["POST"])
 def upload_file():
     if 'file' not in request.files:
@@ -76,6 +91,7 @@ def get_approach_path_message():
     message = process_approach_path(approachPath)
     return jsonify({'message': message})
 
+# Message the user will see after they chose their approach path
 def process_approach_path(approach_path):
     if approach_path == 'random':
         return "You chose random approach path"
@@ -105,20 +121,12 @@ def start():
     print(f"Received request: Target HR: {targetHR}, Current HR: {currentHR}, Resting HR: {restingHR}, Approach Path: {approachPath}")
 
     csvLocation = os.path.join(script_dir, "music_characteristics.csv")
-    selected_music = selectMusic(targetHR, currentHR, restingHR, csvLocation)
-
-    approach_messages = {
-        "SHALLOW": process_approach_path("SHALLOW"),
-        "LINEAR": process_approach_path("LINEAR"),
-        "STEEP": process_approach_path("STEEP"),
-        "Parabola": process_approach_path("Parabola"),
-        "Rollercoaster": process_approach_path("Rollercoaster")
-    }
+    selected_music = selectMusic(targetHR, currentHR, restingHR, csvLocation, approachPath)
 
     if selected_music:
         music_path = f'/music/{selected_music}'
-        return jsonify({**approach_messages, 'selected_music': music_path})
-    return jsonify({**approach_messages, 'error': 'No song selected'})
+        return jsonify({'selected_music': music_path})
+    return jsonify({'error': 'No song selected'})
 
 # Route for the main page
 @app.route("/myapp")
@@ -141,7 +149,7 @@ def get_music():
     approachPath = data.get('approachPath', 'SHALLOW')
     print(f"Received request: Target HR: {targetHR}, Current HR: {heartRate}, Resting HR: {restingHR}, Approach Path: {approachPath}")
     csvLocation = os.path.join(script_dir, "music_characteristics.csv")
-    selected_music = selectMusic(targetHR, heartRate, restingHR, csvLocation)
+    selected_music = selectMusic(targetHR, heartRate, restingHR, csvLocation, approachPath)
     if selected_music:
         music_path = f'/music/{selected_music}'
         return jsonify({'selected_music': music_path})
@@ -163,10 +171,25 @@ def user_guide():
 def advanced_features():
     return render_template('advanced_features.html')
 
+def generate_csv(directory_path, csv_file_path):
+    headers = [
+        'file_name', 'avg_tempo', 'tempo_first_30', 'tempo_last_30',
+        'song_length', 'pitch_first_30', 'pitch_last_30', 'avg_pitch'
+    ]
+
+    with open(csv_file_path, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(headers)
+
+        for filename in os.listdir(directory_path):
+            if filename.endswith('.mp3'):
+                file_path = os.path.join(directory_path, filename)
+                print(f"Analyzing: {file_path}")
+
+                characteristics = get_characteristics(file_path)
+                writer.writerow([filename] + characteristics)
+
 if __name__ == "__main__":
-    directory_path = os.path.join(script_dir, music_dir)
-    csv_file_path = os.path.join(script_dir, csv_file)
-    generate_csv(directory_path, csv_file_path)
 
     def open_browser():
         webbrowser.open_new("http://127.0.0.1:5000/myapp")
@@ -175,6 +198,7 @@ if __name__ == "__main__":
         Timer(1, open_browser).start()
     
     app.run(port=5000)
+
 
 
 
