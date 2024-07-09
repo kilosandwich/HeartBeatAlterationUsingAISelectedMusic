@@ -5,7 +5,7 @@ from openant.devices.heart_rate import HeartRate, HeartRateData
 from datetime import datetime
 import threading
 import queue
-import numpy as np  # Import for numpy
+import numpy as np  
 
 def heart_rate_monitor(current_heart_rate_data: queue.Queue, resting_heart_rate_data: queue.Queue):  
     update_interval = 10
@@ -52,20 +52,20 @@ def heart_rate_monitor(current_heart_rate_data: queue.Queue, resting_heart_rate_
                     current_heart_rate_data.get() 
                 #now that the queue is empty, put a value into the queue
                 current_heart_rate_data.put(list(heart_rate_list_current))  
-                print("Current Heart Rate List:", heart_rate_list_current)
+                #print("Current Heart Rate List:", heart_rate_list_current)
 
             # Logic for resting heart rate data
             heart_rate_list_resting.append(data.heart_rate)
             if len(heart_rate_list_resting) > fixed_list_size_resting:
                 heart_rate_list_resting.pop(0)
 
-            print("Resting Heart Rate List Before Check:", heart_rate_list_resting)  # Debug statement
+            #print("Resting Heart Rate List Before Check:", heart_rate_list_resting)  # Debug statement
             if len(heart_rate_list_resting) == fixed_list_size_resting:
                 hr_range = max(heart_rate_list_resting) - min(heart_rate_list_resting)
-                print(f"Resting Heart Rate Range: {hr_range}")  # Debug statement
+                #print(f"Resting Heart Rate Range: {hr_range}")  # Debug statement
                 if hr_range < 3:
                     avg_hr = int(np.mean(heart_rate_list_resting))
-                    print(f"Calculated Resting Heart Rate: {avg_hr}")  # Debug statement
+                    #print(f"Calculated Resting Heart Rate: {avg_hr}")  # Debug statement
                     # Check and update the resting heart rate in the queue
                     if not resting_heart_rate_data.empty():
                         current_resting_hr = resting_heart_rate_data.queue[0]
@@ -73,13 +73,15 @@ def heart_rate_monitor(current_heart_rate_data: queue.Queue, resting_heart_rate_
                             while not resting_heart_rate_data.empty():
                                 resting_heart_rate_data.get()
                             resting_heart_rate_data.put(avg_hr)
-                            print(f"Updated Resting Heart Rate in Queue: {avg_hr}")  # Debug statement
+                            #print(f"Updated Resting Heart Rate in Queue: {avg_hr}")  # Debug statement
                         else:
-                            print(f"Kept Resting Heart Rate in Queue: {current_resting_hr}")  # Debug statement
+                            #nonsense statement so we can access print statement later, remove this 
+                            nonsense = 0
+                            #print(f"Kept Resting Heart Rate in Queue: {current_resting_hr}")  # Debug statement
                     else:
                         resting_heart_rate_data.put(avg_hr)
-                        print(f"Initial Resting Heart Rate in Queue: {avg_hr}")  # Debug statement
-                print("Resting Heart Rate List After Check:", heart_rate_list_resting)  # Debug statement
+                        #print(f"Initial Resting Heart Rate in Queue: {avg_hr}")  # Debug statement
+                #print("Resting Heart Rate List After Check:", heart_rate_list_resting)  # Debug statement
 
     device.on_found = device_found
     device.on_device_data = handle_device_data

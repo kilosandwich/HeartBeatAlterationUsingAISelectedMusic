@@ -9,6 +9,7 @@ class HeartRateReader:
         # Create the queues in the initialization function
         self.heart_rate_data = queue.Queue(maxsize=1)
         self.resting_heart_rate_data = queue.Queue(maxsize=1)
+        self.requiredLength = 10
         # This is the current heart rate as a list, it is not the queue!
         self.current_heart_rate = None
         # Create the thread for the monitor, pass both queues as arguments into the thread
@@ -29,13 +30,15 @@ class HeartRateReader:
                     # Clear the internal values for current heart rate
                     self.current_heart_rate = [i[0] for i in heart_rate_list if isinstance(i, tuple)]
                     # Ensure the list is always 5 elements long by appending zeros if necessary
-                    while len(self.current_heart_rate) < 5:
+                    #this can be adjusted under required length
+                    while len(self.current_heart_rate) < self.requiredLength:
                         self.current_heart_rate.append(0)
                     print(f"Heart Rate List As Read From Queue: {self.current_heart_rate}")
         except Exception as e:
             print(f"Error reading heart rate data: {e}")
 
     def get_heart_rate(self):
+        print("I have been asked to read the current heart rate list")
         self.read_heart_rate()
         return self.current_heart_rate
 
