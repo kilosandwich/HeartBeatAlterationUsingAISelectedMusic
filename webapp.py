@@ -13,53 +13,50 @@ from werkzeug.utils import secure_filename
 from openant.easy.node import Node
 from openant.devices import ANTPLUS_NETWORK_KEY
 from openant.devices.heart_rate import HeartRate, HeartRateData
-from ModelDefinition import SimpleNN  
+from ModelDefinition import SimpleNN  # Ensure to import your model class
 from GetHeartRate import HeartRateReader
 from selectMusic import selectMusic
 from GetCharacteristics import get_characteristics
 from GenerateCSV import generate_csv
+from CSV_Handler import CSV_Handler
 
-# Sets up the Flask app and Bootstrap for a nice UI
+# This will start up Flask app and Bootstrap
 app = Flask(__name__)
 Bootstrap(app)
 
+# Global variables and constants
 script_dir = os.path.dirname(os.path.abspath(__file__))
-music_dir = os.path.join(script_dir, "music")
-csv_file = os.path.join(script_dir, "music_characteristics.csv")
-TIMEOUT = 60  # Times out in 60 seconds
-HR = 0  # This will store the heart rate
+music_dir = os.path.join(script_dir, "music")#this is defining the file path to the music directory
+csv_file = os.path.join(script_dir, "music_characteristics.csv")#this is the path to the csv file
+TIMEOUT = 60
+HR = 0  # Global variable that will store heart rate
 input_size = 9
 hidden_size = 10
 output_size = 1
 learning_rate = 0.01
 dropout_prob = 0.1
 
-model_path = os.path.join(script_dir, "HBModel.pth")
-
-# Loads the pre-trained model
+model_path = os.path.join(script_dir, "HBModel.pth")#this will be defing the path taken to the model
 model = SimpleNN(input_size, hidden_size, output_size, dropout_prob)
 try:
     model.load_state_dict(torch.load(model_path))
-    model.eval()  # Sets the model to evaluation mode
+    model.eval()#this is to endure that the mdoel is set to evaluation mode
     print("Model loaded and set to evaluation mode.")
 except Exception as e:
-    print(f"Error loading model: {e}")
+    print(f"Error loading model: {e}")#print an error if the model doesnt load
 
-# This makes sure that the music directory exists
 if not os.path.exists(music_dir):
-    os.makedirs(music_dir)
+    os.makedirs(music_dir)#this will ensure there is a music directory or create one
 
-# Initializes the heart rate reader, pretty simple
+# Initialize the HeartRateReader class
 HR = HeartRateReader()
+ALLOWED_EXTENSIONS = {'mp3'}#this makes sure the only acceptable file are mp3 files
 
-# Allowed file extensions for uploading music, which are only mp3 
-ALLOWED_EXTENSIONS = {'mp3'}
-
-# Checks if a file has one of the allowed extensions
-def allowed_file(filename):
+def allowed_file(filename):#check to make sure the file has the allowed extension
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Handles file uploads by using a POST request
+# this the Flask route for uploading files into the drop box the message that 
+#appears will depend on if it's the correct extension for mp3 file then they will see succesful upload
 @app.route("/upload", methods=["POST"])
 def upload_file():
     if 'file' not in request.files:
@@ -71,35 +68,32 @@ def upload_file():
         filename = secure_filename(file.filename)
         file.save(os.path.join(music_dir, filename))
         
-        # Regenerates the CSV file after uploading new files
-        generate_csv(music_dir, csv_file)
-        print("CSV file has been regenerated.")
+        # once a file is uploaded the  CSV_Handler is to regenerate the CSV file after uploading new files
+        csv_handler = CSV_Handler(music_dir, csv_file)
+        csv_handler.createThread()  # this will create the thread to regenerate the CSV so it runs faster
         
-        return jsonify({'success': 'File uploaded successfully'}), 200
+        return jsonify({'success': 'File uploaded successfully'}), 200#message that will appear if mp3 file uploads correctly
     else:
-        return jsonify({'error': 'Invalid file type'}), 400
+        return jsonify({'error': 'Invalid file type'}), 400# this will appear if its not a mp3 file submitted
 
-# Starts monitoring the users resting heart rate
 @app.route("/start_resting_hr_monitor", methods=["GET"])
 def start_resting_hr_monitor():
-    hr = HR.get_resting_heart_rate()
-    return jsonify({"hr": hr, "type": "resting"})
+    hr = HR.get_resting_heart_rate() #get the resting heart rate from the user
+    return jsonify({"hr": hr, "type": "resting"}) #return the heart rate to be displayed
 
-# Starts monitoring the users current heart rate
 @app.route("/start_current_hr_monitor", methods=["GET"])
 def start_current_hr_monitor():
-    hr = HR.get_heart_rate_int()
+    hr = HR.get_heart_rate_int()# get the current heart rate 
     return jsonify({"hr": hr, "type": "current"})
 
-# Gets a message based on the users selected approach path
 @app.route("/get_approach_path_message", methods=["POST"])
 def get_approach_path_message():
     data = request.json
-    approachPath = data.get('approachPath', 'SHALLOW')
-    message = process_approach_path(approachPath)
-    return jsonify({'message': message})
+    approachPath = data.get('approachPath', 'SHALLOW') #get the approach path from the data request
+    message = process_approach_path(approachPath)#process the selected apporach path
+    return jsonify({'message': message})#return the message showing the approach path
 
-# Returns a message based on the approach path
+# Message the user will see after they chose their approach path
 def process_approach_path(approach_path):
     if approach_path == 'random':
         return "You chose random approach path"
@@ -119,45 +113,41 @@ def process_approach_path(approach_path):
 @app.route("/start", methods=["POST"])
 def start():
     data = request.json
-    targetHR = int(data['targetHR'])
-    restingHR = int(data['restingHR'])
-    approachPath = data.get('approachPath', 'SHALLOW')
+    targetHR = int(data['targetHR'])#gets the target heart rate from the data
+    restingHR = int(data['restingHR'])#gets the resting heart rate from the data
+    approachPath = data.get('approachPath', 'SHALLOW')#gets the chosen approach path from the request 
 
-    # Gets the current heart rate
+    # Get the current heart rate
     currentHR = HR.get_heart_rate_int()
 
     print(f"Received request: Target HR: {targetHR}, Current HR: {currentHR}, Resting HR: {restingHR}, Approach Path: {approachPath}")
 
-    # Path to the CSV file with music characteristics
-    csvLocation = os.path.join(script_dir, "music_characteristics.csv")
-
-    # Selects the appropriate music based on the heart rate and approach path
-    selected_music = selectMusic(targetHR, currentHR, restingHR, csvLocation, approachPath)
+    csvLocation = os.path.join(script_dir, "music_characteristics.csv")#this will define the csv loaction to make sure it's created
+    selected_music = selectMusic(targetHR, currentHR, restingHR, csvLocation, approachPath)# this will select the music based on the data
 
     if selected_music:
-        music_path = f'/music/{selected_music}'
-        return jsonify({'selected_music': music_path})
-    return jsonify({'error': 'No song selected'})
+        music_path = f'/music/{selected_music}' #define the music path to make sure correct song is returned
+        return jsonify({'selected_music': music_path}) #return the selected music 
+    return jsonify({'error': 'No song selected'})# this will show an error message if no song is selected
 
-# Main page showing the list of music files
+# Route for the main page
 @app.route("/myapp")
 def index():
-    music_files = get_music_files()
-    return render_template('index.html', music_files=music_files)
+    music_files = get_music_files()#this will get the lsit ofmp3 music files in directory
+    return render_template('index.html', music_files=music_files)# this will send the music files to main
 
-# Gets the list of mp3 files in the music directory
+# Function to get music files
 def get_music_files():
     pattern = "*.mp3"
     files = glob.glob(os.path.join(music_dir, pattern))
     return [{'file_name': os.path.basename(file), 'file_path': f'/music/{os.path.basename(file)}'} for file in files]
 
-# Gets music based on the heart rate data provided by the user
 @app.route("/get_music", methods=["POST"])
 def get_music():
     data = request.json
-    targetHR = data['targetHR']
-    heartRate = data['heartRate']
-    restingHR = data['restingHR']
+    targetHR = data['targetHR']# this will get the target heart that should already be set
+    heartRate = data['heartRate']# this get the current heart rate from the request that is sent 
+    restingHR = data['restingHR']# this will read the heartr ate set or if thebutton is pressed
     approachPath = data.get('approachPath', 'SHALLOW')
     print(f"Received request: Target HR: {targetHR}, Current HR: {heartRate}, Resting HR: {restingHR}, Approach Path: {approachPath}")
     csvLocation = os.path.join(script_dir, "music_characteristics.csv")
@@ -167,28 +157,23 @@ def get_music():
         return jsonify({'selected_music': music_path})
     return jsonify({'error': 'No song selected'})
 
-# Plays a specific mp3 file
 @app.route('/music/<filename>')
 def play_music(filename):
-    return send_from_directory(music_dir, filename)
+    return send_from_directory(music_dir, filename)# this will return the music file from the music directory
 
-# Home page route
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('index.html')# the index is the home page so it will return the same page
 
-# Users guide page route
 @app.route('/user_guide')
 def user_guide():
-    return render_template('user_guide.html')
+    return render_template('user_guide.html')# the user guide is it's own page so it will go to seperate page when pressed
 
-# This is the advanced features page route
 @app.route('/advanced_features')
 def advanced_features():
     return render_template('advanced_features.html')
 
-# Generates a CSV file with the characteristics of the music files
-def generate_csv(directory_path, csv_file_path):
+def generate_csv(directory_path, csv_file_path):#these are the characterisitcs that will be used to generate the csv
     headers = [
         'file_name', 'avg_tempo', 'tempo_first_30', 'tempo_last_30',
         'song_length', 'pitch_first_30', 'pitch_last_30', 'avg_pitch'
@@ -196,26 +181,32 @@ def generate_csv(directory_path, csv_file_path):
 
     with open(csv_file_path, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(headers)
+        writer.writerow(headers)#this will write the headers to the CSV file only
 
         for filename in os.listdir(directory_path):
             if filename.endswith('.mp3'):
                 file_path = os.path.join(directory_path, filename)
                 print(f"Analyzing: {file_path}")
 
-                # Extracts the characteristics of the song
-                characteristics = get_characteristics(file_path)
-                writer.writerow([filename] + characteristics)
+                characteristics = get_characteristics(file_path)# this will get the characteristic from audio files
+                writer.writerow([filename] + characteristics)#charactersitcs of the csv file
 
 if __name__ == "__main__":
-
-    # Opens the browser with the app
     def open_browser():
-        webbrowser.open_new("http://127.0.0.1:5000/myapp")
+        webbrowser.open_new("http://127.0.0.1:5000/myapp")# this opens the app in the default browser
     
     if not os.environ.get("WERKZEUG_RUN_MAIN"):
-        Timer(1, open_browser).start()
+        Timer(1, open_browser).start()# makes sure timer starts to open browser afeter 1 second
     
-    # Runs the Flask application
-    app.run(port=5000)
-4
+    app.run(port=5000)#port 5000 will be used to run the flask app
+
+
+
+
+
+
+
+
+
+
+
