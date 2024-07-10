@@ -30,13 +30,14 @@ class HeartRateReader:
                     # Clear the internal values for current heart rate
                     self.current_heart_rate = [i[0] for i in heart_rate_list if isinstance(i, tuple)]
                     # Ensure the list is always 5 elements long by appending zeros if necessary
-                    #this can be adjusted under required length
+                    # this can be adjusted under required length
                     while len(self.current_heart_rate) < self.requiredLength:
                         self.current_heart_rate.append(0)
                     print(f"Heart Rate List As Read From Queue: {self.current_heart_rate}")
         except Exception as e:
             print(f"Error reading heart rate data: {e}")
 
+    # Reads the current heart rate list and returns it
     def get_heart_rate(self):
         print("I have been asked to read the current heart rate list")
         self.read_heart_rate()
@@ -44,7 +45,8 @@ class HeartRateReader:
 
     def get_heart_rate_int(self):
         print("I am attempting to retrieve an integer of the current heart rate!")
-        self.read_heart_rate()  # Read the heart rate once
+        self.read_heart_rate()  # Reads the heart rate once
+        # Returns either the first element of the heart rate list or None if the list is empty
         return self.current_heart_rate[0] if self.current_heart_rate else None
 
     def get_resting_heart_rate(self):
@@ -59,6 +61,7 @@ class HeartRateReader:
                     return resting_heart_rate
                 else:
                     print("Waiting for resting heart rate data...")
+                    # Sleeps for 1 second before trying again
                     time.sleep(1)
             except Exception as e:
                 print(f"Error retrieving resting heart rate: {e}")
@@ -69,9 +72,11 @@ if __name__ == "__main__":
     while True:
         time.sleep(1)
 
-    """resting_hr = reader.get_resting_heart_rate()
+    """
+    # Example usage: Retrieve and print resting and current heart rates
+    resting_hr = reader.get_resting_heart_rate()
     print(f"Resting Heart Rate: {resting_hr}")
     time.sleep(10)
     hr = reader.get_heart_rate_int()
-    print(f"Resting Heart Rate: {hr}")
-"""
+    print(f"Current Heart Rate: {hr}")
+    """
