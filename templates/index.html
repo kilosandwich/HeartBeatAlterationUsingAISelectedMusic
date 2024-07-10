@@ -4,17 +4,19 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" IE="edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heart Rate Music</title>
+    <title>Heart Rate Music</title> 
+    <!--this tis the title of the webpage that will appear when the app is loaded-->
     
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <style>
+        
         body {
             background-color: maroon;
             margin: 0 10%;
             font-family: sans-serif;
-        }
+        }   
         .upload-box {
             border: 2px dashed #ccc;
             border-radius: 20px;
@@ -46,7 +48,7 @@
         }
     </style>
 </head>
-<body>
+<body><!--this is the nav bar with the spacinf and the things inlcuded to show the different tabs-->
     <nav class="navbar">
         <div class="navdiv">
             <div class="logo">
@@ -58,17 +60,21 @@
             </ul>
         </div>
     </nav>
-    
+    <!--we divided the home page into div containers
+    in the first container we have the image of a heart and below the heart are arrows that will control the target heart rate value-->
     <div id="div1">
         <div class="arrow-container">    
             <img src="{{ url_for('static', filename='images/Logo.png') }}" height="200" alt="Heart Rate Monitor">
-            <div class="arrow arrow-up"></div>
+            <div class="arrow arrow-up"></div> <!--the up and down arrows that control heart rate-->
             <div class="arrow arrow-down"></div>
-            <p>Target Heart Rate</p>
-            <input type="number" id="targetHR" placeholder="Enter target heart rate" value="80">
-            
+            <p>Target Heart Rate</p><!--this is the label for target heart rate-->
+            <input type="number" id="targetHR" placeholder="Enter target heart rate" value="70">
+            <!--this is the target heart rate box that is set to 80, you change the default by changing the value-->
             <button class="start-button" onclick="startMonitoring()">Start</button>
+            <!--this is the start button which the user will press to start everything and get a music choice-->
 
+           <!--this is the audio player the player is hidden since the display is set to none
+           when the song appears it will have a pause and play button next to it -->
             <div id="audioPlayer" style="display:none">
                 <button id="playPauseBtn" class="btn btn-info" onClick="playPause()">Play/Pause Song</button>
                 <button id="skipBtn" class="btn btn-warning" onClick="skipSong()">Skip Song</button>
@@ -77,7 +83,8 @@
             </div>
         </div>
     </div>
-    
+    <!--this is div 2 it will be labeled as the click to see our advanced features the advanced features will be a drop down that has the 
+    advanced features -->
     <div id="div2">
         <div class="accordion jumbotron text-center">Click to see our Advanced Features</div>
         <div class="panel">
@@ -89,14 +96,14 @@
             <button class="approach-button" id="Parabola" onclick="selectApproachPath('Parabola')">Parabola</button>
             <button class="approach-button" id="Rollercoaster" onclick="selectApproachPath('Rollercoaster')">Rollercoaster</button>
             <div id="approachPathResult"></div>
-
+           <!--there will be buttons labeled as the apporach paths the user will be allowed to only select one button at a time-->
             <div class="arrow arrow-up" id="restingHR-up"></div>
             <div class="arrow arrow-down" id="restingHR-down"></div>
             <label for="restingHR">Resting Heart Rate:</label>
             <input type="number" id="restingHR" placeholder="Enter resting heart rate" value='70'>
             <button id="startRestingHR" class="btn btn-primary">Press to get resting heart rate</button>
-            <p id="restingHRResult"></p>
-        </div>
+            <p id="restingHRResult"></p><!--this will be the resting heart rate value that will be set to 70-->
+        </div>                          <!--the user will be able to adjust the resting heart rate -->
     </div>
     
     <div id="div3">
