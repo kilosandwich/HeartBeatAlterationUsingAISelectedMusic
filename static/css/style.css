@@ -226,8 +226,8 @@ body {
 
 .start-button {
     margin-top: 20px;
-    width: 350px;
-    height: 650;
+    width: 200px;
+    height: 100;
     
     font-size: 24px;
     color: white;
@@ -311,4 +311,7 @@ p1{
 #div2{
     font-size: 20;
     
+}
+.file-drop-box.dragover {
+    border-color: green;
 }
