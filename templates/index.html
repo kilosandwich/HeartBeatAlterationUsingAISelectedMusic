@@ -76,8 +76,8 @@
            <!--this is the audio player the player is hidden since the display is set to none
            when the song appears it will have a pause and play button next to it -->
             <div id="audioPlayer" style="display:none">
-                <button id="playPauseBtn" class="btn btn-info" onClick="playPause()">Play/Pause Song</button>
-                <button id="skipBtn" class="btn btn-warning" onClick="skipSong()">Skip Song</button>
+                <!--button id="playPauseBtn" class="btn btn-info" onClick="playPause()">Play/Pause Song</button-->
+                <!--button id="skipBtn" class="btn btn-warning" onClick="skipSong()">Skip Song</button-->
                 <audio id="audio" src="" controls></audio>
                 <div id="songName" style="margin-top: 10px; font-weight: bold;"></div> <!-- Song name will appear here -->
             </div>
@@ -89,11 +89,12 @@
         <div class="accordion jumbotron text-center">Click to see our Advanced Features</div>
         <div class="panel">
             <p>This is the approach path selections</p>
-            <button class="approach-button" id="random" onclick="selectApproachPath('random')">RANDOM</button>
-            <button class="approach-button selected" id="SHALLOW" onclick="selectApproachPath('SHALLOW')">SHALLOW</button>
-            <button class="approach-button" id="LINEAR" onclick="selectApproachPath('LINEAR')">LINEAR</button>
-            <button class="approach-button" id="STEEP" onclick="selectApproachPath('STEEP')">STEEP</button>
+            <button class="approach-button selected" id="none" onclick="selectApproachPath('none')">None</button>
+            <button class="approach-button " id="Shallow" onclick="selectApproachPath('Shallow')">Shallow</button>
+            <button class="approach-button" id="Linear" onclick="selectApproachPath('Linear')">Linear</button>
+            <button class="approach-button" id="Steep" onclick="selectApproachPath('Steep')">Steep</button>
             <button class="approach-button" id="Parabola" onclick="selectApproachPath('Parabola')">Parabola</button>
+            <button class="approach-button" id="Fastest" onclick="selectApproachPath('Fastest')">Fastest</button>
             <button class="approach-button" id="Rollercoaster" onclick="selectApproachPath('Rollercoaster')">Rollercoaster</button>
             <div id="approachPathResult"></div>
            <!--there will be buttons labeled as the apporach paths the user will be allowed to only select one button at a time-->
@@ -106,15 +107,15 @@
         </div>                          <!--the user will be able to adjust the resting heart rate -->
     </div>
     
-    <div id="div3">
+    <div id="div3"><!--this is the upload box that only accepts mp3 files you can either drag or drop files-->
         <div class="upload-box" id="uploadBox">
             Drag and drop MP3 files here or click to upload
             <input type="file" id="fileInput" accept=".mp3" style="display: none;">
         </div>
     </div>
-
-    <script>
-        var selectedApproachPath = 'SHALLOW';
+              <!--this is the apporach path selection that is set to have none selected by default,until the user sleects a path-->
+    <script> 
+        var selectedApproachPath = 'None';
 
         function selectApproachPath(path) {
             selectedApproachPath = path;
@@ -123,7 +124,7 @@
             });
             document.getElementById(path).classList.add('selected');
 
-            // Show approach path message
+            // Show approach path message or it will show the message that there was an error
             $.ajax({
                 url: "/get_approach_path_message",
                 method: "POST",
@@ -139,7 +140,8 @@
                 }
             });
         }
-
+        //this is the start monitoring for the start buton that takes the input of the target resting hr and 
+        //approach path the user selected or it will return the message that the user needs to enter a target or resting heart rate
         function startMonitoring() {
             var targetHR = $("#targetHR").val();
             var restingHR = $("#restingHR").val();
@@ -184,7 +186,8 @@
                 error: function(error) {
                     $("#musicResult").text("Error getting music recommendation.");
                 }
-            });
+            });   // this is the audio player that gets returned when the user presses the start button and the inputs are read
+                 //it will show the song name with the audio player or it will give the error message 
         }
 
         $(document).ready(function() {
@@ -200,7 +203,7 @@
                         panel.style.display = "block";
                     }
                 });
-            });
+            });// style elements for the nav bar and the start button
 
             var uploadBox = document.getElementById('uploadBox');
             var fileInput = document.getElementById('fileInput');
@@ -219,7 +222,7 @@
                 uploadBox.classList.remove('dragover');
                 var files = e.dataTransfer.files;
                 handleFiles(files);
-            });
+            }); //this is the upload box that allows the user ot either upload a file or drag and drop a file
 
             uploadBox.addEventListener('click', function(e) {
                 fileInput.click();
@@ -236,7 +239,7 @@
                         alert('Only MP3 files are allowed!');
                         return;
                     }
-                    uploadFile(files[i]);
+                    uploadFile(files[i]);// this ensures that only mp3 files are accpeted
                 }
             }
 
@@ -254,7 +257,7 @@
                         alert('File uploaded successfully!');
                     },
                     error: function(error) {
-                        alert('Error uploading file');
+                        alert('Error uploading file!');
                     }
                 });
             }
@@ -324,7 +327,7 @@
                 } else {
                     $("#musicResult").text("Please enter all heart rate values.");
                 }
-            });
+            });// this calls the get music function to get all the inputs for the heart rate values to return the right song 
         });
 
         var isPlaying = false;
@@ -336,7 +339,7 @@
                 audio.play();
             }
             isPlaying = !isPlaying;
-        }
+        } //this is the audio control that allow the user to pauase and play the song
 
         function skipSong() {
             if (recommendedSongs.length > 0) {
@@ -345,7 +348,7 @@
                 playSong();
             } else {
                 $("#musicResult").text("No more songs to play.");
-            }
+            }  ////this is the skip button that should allow the user to skip the song 
         }
 
         function loadSong(index) {
@@ -358,7 +361,7 @@
             audio.play();
             isPlaying = true;
         }
-
+          ///this is the cotrols for the arrows that allow the user to increase or decrease the value for target hr or resting hr
         const targetHRInput = document.getElementById('targetHR');
         const arrowUp = document.querySelector('.arrow-up');
         const arrowDown = document.querySelector('.arrow-down');
@@ -374,7 +377,7 @@
             } else if (value > 150) {
                 targetHRInput.value = 150;
             }
-        });
+        });//the up arrow goes up in increments of 10 and can only reach a max of 150
 
         arrowDown.addEventListener('click', () => {
             targetHRInput.value = parseInt(targetHRInput.value) - 10;
@@ -384,26 +387,26 @@
             } else if (value > 150) {
                 targetHRInput.value = 150;
             }
-        });
+        });///the down arrow for taget hr goes down by 10 and can only go to 40
         restingHRUp.addEventListener('click', () => {
             restingHRInput.value = parseInt(restingHRInput.value) + 10;
             let value = parseInt(restingHRInput.value);
             if (value < 50) {
-                restingHRInput.value = 50;
+                restingHRInput.value = 40;
             } else if (value > 150) {
                 restingHRInput.value = 150;
             }
-        });
+        });///the resting hr up goes up by 10 and can only go to 150
 
         restingHRDown.addEventListener('click', () => {
             restingHRInput.value = parseInt(restingHRInput.value) - 10;
             let value = parseInt(restingHRInput.value);
             if (value < 50) {
-                restingHRInput.value = 50;
+                restingHRInput.value = 40;
             } else if (value > 150) {
                 restingHRInput.value = 150;
             }
-        });
+        });// the resitng hr down arrow goes down by 10 and can only go down to 40
 
         targetHRInput.addEventListener('input', () => {
             let value = parseInt(targetHRInput.value);
@@ -412,15 +415,15 @@
             } else if (value > 150) {
                 targetHRInput.value = 150;
             }
-        });
+        });//this sets the target heart rate max to 150 and min  to 40 and shows the box already filled with the value
         restingHRInput.addEventListener('input', () => {
             let value = parseInt(restingHRInput.value);
             if (value < 50) {
-                restingHRInput.value = 50;
+                restingHRInput.value = 40;
             } else if (value > 150) {
                 restingHRInput.value = 150;
             }
-        });
+        });///this sets the range for resting hr beteen 40-150
     </script>
     
 </body>
