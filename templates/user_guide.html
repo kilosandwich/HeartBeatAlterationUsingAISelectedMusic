@@ -5,117 +5,155 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Guide</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <style>
+    <style>  
         body {
             background-color: maroon;
             margin: 0 10%;
             font-family: sans-serif;
-            text-align: center; /* Center-align all text */
+            text-align: center;
         }
-        img {
-            display: block;
-            margin: 0 auto; /* Center the image */
-        }
-        p {
-            color: white;
+         li {
+            
             font-size: large;
+            margin: 10px 0;
         }
-        div {
-            background-color: white;
-        }
-        * {
-            font-size: 30px; 
-        }
-        .navbar {
-    background: red;
-    font-family: calibri;
-    padding-right: 15px; 
-    padding-left: 15px; 
-}
-
-.navdiv {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.logo a {
-    font-size: 35px;
-    font-weight: 600;
-    color: white;
-    display: block;
-}
-
-
-.navbar a {
-    color: white;
-    text-decoration: none;
-    display: block;
-    text-align: center;
-}
-.navdiv{
-    background: red;
-}
-.logo{
-    background: red;
-}
-div{
-    background: white;
-}
-.accordion{
-    text-align: center;
-}
         
-    </style>
+        .navbar {
+            background: red;
+            font-family: calibri;
+            padding: 15px;
+        }
+        .navdiv {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo a {
+            font-size: 35px;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .content-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 20px;
+            background-color: white;
+            color: black;
+            border-radius: 10px;
+        }
+        .content-section img {
+            max-width: 40%;
+            height: auto;
+            border-radius: 10px;
+        }
+        .content-section p {
+            text-align: left,right;
+            margin: 0 20px;
+            font-size: 20px;
+        }
+        .video-section {
+            margin: 20px 0;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .video-section video {
+            display: block;
+            margin: 0 auto;
+        }
+    </style><!--above are the style elements for the page that inlcude the nav bar from the main page and the div containers
+    including the paragraphs and the size of the images and the video section  -->
 </head>
-<h1>
+<body>            <!--this is the same nav bar from the main html page that contains the home button and the user guide-->
     <nav class="navbar">
         <div class="navdiv">
             <div class="logo">
                 <a href="#">Heart Rate Music</a>
             </div>
             <ul>
-                <li><a href="#">Home</a></li>
+                <li><a href="/">Home</a></li>
                 <li><a href="/user_guide">User Guide</a></li>
-                <li><a href="contact.html"></a></li>
+                
             </ul>
         </div>
     </nav>
-<h1>
-    <div>
 
-        <h1>Welcome to the user guide page</h1>
+    <div class="content">     <!--this is the intro to our page with the tutorial video below or shows the message that 
+        the vidoe type isnt supported by the browser-->
+        <h1>Welcome to the User Guide Page</h1>
         <h2>Here we will be showing you how to use our web app</h2>
-        <h3>Here is a tutuorial vidoe on how to use the site</h3>
-        <video controls autoplay muted loop width="500">
+        <h3>Click below to see a tutorial on how to use Heart Rate Music</h3>
+
+        <div class="video-section">
+            <video controls width="530" height="240">
+                <source src="static/videos/video1123021558.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
             
-            <source src="{{ url_for('static', filename='videos/welcome.mp4') }}" type="video/mp4">
-            Your browser does not support HTML5 video.
-        </video>
-
-        <img src="{{ url_for('static', filename='images/heart.png') }}" height="500" alt="Heart Rate Monitor">
-        
-           
-        <div class="custom-paragraph"> 
-            <p>
-                <li>Navigation Bar - The navbar can take you home or to the user-guide.</li>
-                <li>Target Heart Rate - The target heart rate will be set for the user at 80.</li>
-                <li>+/- - The up and down arrows move in intervals of 5. They allow the user to change the heart rate.</li>
-                <li>Start - The start button is what the user presses when they are ready to get their music choice.</li>
-                <li>Advanced Features - The advanced features allow the user to customize their heart rate alteration.</li>
-            </p>
         </div>
-        <img src="{{ url_for('static', filename='images/Features.png') }}" height="500" alt="Heart Rate Monitor">
-        <p>
-            <li>The shallow path will take allow you to change hour heart rate for a certain range</li>
-            <li>The linear path will take allow you to change hour heart rate for a certain range</li>
-            <li>The steep path will take allow you to change hour heart rate for a certain range</li>
-            <li>The parobola path will take allow you to change hour heart rate for a certain range</li>
-        </p>
 
+        <div class="content-section">  <!--this div container has the garmin instructions on how to set the device to brodadcat mode-->
+            <div class="text-content">
+                <h3>You will first need to set your Garmin device to broadcast mode</h3>
+                <ul1>
+                    <li>1.On the heart rate widget hold up</li>
+                    <li>2.Select options and go to broadcast heart rate</li>
+                    <li>3.Pair your device to your Garmin Ant+ device</li>
+                </ul1>
+            </div>
+            
+        </div>
 
     </div>
+    <div3>
+        <!--this is the image of the home page and the description of what every function on our home page does-->
+ 
+        <div class="content-section">
+            <img src="{{ url_for('static', filename='images/heart.png') }}" alt="Heart Rate Monitor">
+            
+            <div class="text-content">
+                <ul2>
+                    <li>Navigation Bar - The navbar can take you to the user-guide.</li>
+                    <li>Target Heart Rate - The target heart rate will be set for the user at 80.</li>
+                    <li>+/- - The up and down arrows move in intervals of 5. They allow the user to change the heart rate.</li>
+                    <li>Start - The start button is what the user presses when they are ready to get their music choice.</li>
+                    <li>Advanced Features - The advanced features allow the user to customize their heart rate alteration.</li>
+                </ul2>
+            </div>
+        </div>
+           <!--this is the image of the advanced features page that shows the advanced features and explain hwo they work-->
+        <div class="content-section">
+            <img src="{{ url_for('static', filename='images/paths.png') }}" alt="Heart Rate Monitor">
+            
+            <div class="text-content">
+                <ul3>
+                    
+                    <li>This the advanced features part of our web application. Here you can choose an approach path to 
+                        alter your heart rate. Depending on how you want to alter your heart rate you can either go slow or really fast.
+                    </li>
+
+                    <li>You can also press the get resting Heart rate button to get your live resting heart rate.
+                        Once you press the button the resting heart rate will be displayed on screen and fill in the box.</li>
+                    
+                    
+                </ul3>
+                
+            </div>
+        
+            
+        </div>
+    </div3>
+    
 </body>
 </html>
+
 
 
