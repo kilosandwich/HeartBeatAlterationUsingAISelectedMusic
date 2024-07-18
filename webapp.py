@@ -17,7 +17,7 @@ from ModelDefinition import SimpleNN  # Ensure to import your model class
 from GetHeartRate import HeartRateReader
 from selectMusic import selectMusic
 from GetCharacteristics import get_characteristics
-from GenerateCSV import generate_csv
+
 from CSV_Handler import CSV_Handler
 
 # This will start up Flask app and Bootstrap
@@ -28,6 +28,9 @@ Bootstrap(app)
 script_dir = os.path.dirname(os.path.abspath(__file__))
 music_dir = os.path.join(script_dir, "music")#this is defining the file path to the music directory
 csv_file = os.path.join(script_dir, "music_characteristics.csv")#this is the path to the csv file
+    #creation of the CSV_handler class automatically creates the CSV handler, which will read the data in the music folder
+    #using the generate CSV function using a separate thread.
+csv_handler = CSV_Handler(music_dir, csv_file)
 TIMEOUT = 60
 HR = 0  # Global variable that will store heart rate
 input_size = 9
@@ -59,6 +62,7 @@ def allowed_file(filename):#check to make sure the file has the allowed extensio
 #appears will depend on if it's the correct extension for mp3 file then they will see succesful upload
 @app.route("/upload", methods=["POST"])
 def upload_file():
+    global csv_handler #import the CSV_handler for the script in general
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     file = request.files['file']
@@ -69,8 +73,8 @@ def upload_file():
         file.save(os.path.join(music_dir, filename))
         
         # once a file is uploaded the  CSV_Handler is to regenerate the CSV file after uploading new files
-        csv_handler = CSV_Handler(music_dir, csv_file)
-        csv_handler.createThread()  # this will create the thread to regenerate the CSV so it runs faster
+        csv_handler.songAdded()
+        print("CSV file has been regenerated.")  # this will create the thread to regenerate the CSV so it runs faster
         
         return jsonify({'success': 'File uploaded successfully'}), 200#message that will appear if mp3 file uploads correctly
     else:
@@ -89,22 +93,24 @@ def start_current_hr_monitor():
 @app.route("/get_approach_path_message", methods=["POST"])
 def get_approach_path_message():
     data = request.json
-    approachPath = data.get('approachPath', 'SHALLOW') #get the approach path from the data request
+    approachPath = data.get('approachPath', 'none') #get the approach path from the data request
     message = process_approach_path(approachPath)#process the selected apporach path
     return jsonify({'message': message})#return the message showing the approach path
 
 # Message the user will see after they chose their approach path
 def process_approach_path(approach_path):
-    if approach_path == 'random':
-        return "You chose random approach path"
-    if approach_path == 'SHALLOW':
-        return "You chose SHALLOW approach path"
-    elif approach_path == 'LINEAR':
-        return "You chose LINEAR approach path"
-    elif approach_path == 'STEEP':
-        return "You chose STEEP approach path"
+    if approach_path == 'none':
+        return "You chose none approach path"
+    if approach_path == 'Shallow':
+        return "You chose Shallow approach path"
+    elif approach_path == 'Linear':
+        return "You chose Linear approach path"
+    elif approach_path == 'Steep':
+        return "You chose Steep approach path"
     elif approach_path == 'Parabola':
         return "You chose Parabola approach path"
+    elif approach_path == 'Fastest':
+        return "You chose Fastest approach path"
     elif approach_path == 'Rollercoaster':
         return "You chose Rollercoaster approach path"
     else:
@@ -115,7 +121,7 @@ def start():
     data = request.json
     targetHR = int(data['targetHR'])#gets the target heart rate from the data
     restingHR = int(data['restingHR'])#gets the resting heart rate from the data
-    approachPath = data.get('approachPath', 'SHALLOW')#gets the chosen approach path from the request 
+    approachPath = data.get('approachPath', 'none')#gets the chosen approach path from the request 
 
     # Get the current heart rate
     currentHR = HR.get_heart_rate_int()
@@ -124,7 +130,10 @@ def start():
 
     csvLocation = os.path.join(script_dir, "music_characteristics.csv")#this will define the csv loaction to make sure it's created
     selected_music = selectMusic(targetHR, currentHR, restingHR, csvLocation, approachPath)# this will select the music based on the data
+    
 
+
+        
     if selected_music:
         music_path = f'/music/{selected_music}' #define the music path to make sure correct song is returned
         return jsonify({'selected_music': music_path}) #return the selected music 
@@ -173,25 +182,9 @@ def user_guide():
 def advanced_features():
     return render_template('advanced_features.html')
 
-def generate_csv(directory_path, csv_file_path):#these are the characterisitcs that will be used to generate the csv
-    headers = [
-        'file_name', 'avg_tempo', 'tempo_first_30', 'tempo_last_30',
-        'song_length', 'pitch_first_30', 'pitch_last_30', 'avg_pitch'
-    ]
-
-    with open(csv_file_path, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(headers)#this will write the headers to the CSV file only
-
-        for filename in os.listdir(directory_path):
-            if filename.endswith('.mp3'):
-                file_path = os.path.join(directory_path, filename)
-                print(f"Analyzing: {file_path}")
-
-                characteristics = get_characteristics(file_path)# this will get the characteristic from audio files
-                writer.writerow([filename] + characteristics)#charactersitcs of the csv file
 
 if __name__ == "__main__":
+   
     def open_browser():
         webbrowser.open_new("http://127.0.0.1:5000/myapp")# this opens the app in the default browser
     
