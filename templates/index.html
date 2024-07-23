@@ -18,7 +18,7 @@
             font-family: sans-serif;
         }   
         .upload-box {
-            border: 2px dashed #ccc;
+            border: 2px  #ccc;
             border-radius: 20px;
             width: 100%;
             height: 100px;
@@ -64,22 +64,26 @@
     in the first container we have the image of a heart and below the heart are arrows that will control the target heart rate value-->
     <div id="div1">
         <div class="arrow-container">    
-            <img src="{{ url_for('static', filename='images/Logo.png') }}" height="200" alt="Heart Rate Monitor">
-            <div class="arrow arrow-up"></div> <!--the up and down arrows that control heart rate-->
-            <div class="arrow arrow-down"></div>
-            <p>Target Heart Rate</p><!--this is the label for target heart rate-->
-            <input type="number" id="targetHR" placeholder="Enter target heart rate" value="70">
+            <img src="{{ url_for('static', filename='images/Logo.png') }}" height="250"  alt="Heart Rate Monitor"style="margin-top: 20px;"style="margin-bottom: 20px;">
+            
+            <p style="font-size: 60px;">Target Heart Rate</p><!--this is the label for target heart rate-->
+            <input type="number" id="targetHR" placeholder="Enter target heart rate" value="70" class="no-arrows">
+            <p class="large-font">Use the arrows below to change the value for Target Heart Rate</p>
+
+            <div class="arrow arrow-up"></div><div class="arrow arrow-down"></div>
             <!--this is the target heart rate box that is set to 80, you change the default by changing the value-->
             <button class="start-button" onclick="startMonitoring()">Start</button>
             <!--this is the start button which the user will press to start everything and get a music choice-->
 
            <!--this is the audio player the player is hidden since the display is set to none
            when the song appears it will have a pause and play button next to it -->
-            <div id="audioPlayer" style="display:none">
+            <div id="audioPlayer" style="display:none;text-align: center;">
+                <p id="songName" style="font-size: 20px; margin-bottom: 10px;">Song Name</p><!-- Song name will appear here -->
+                <audio id="audio" src="" controls style="display: block; margin: 0 auto;"></audio>
+                <button id="skipBtn" class="btn btn-warning" onClick="skipSong()" style="display: block; margin: 10px auto;">Skip Song</button>
+                <!--this is the skup button that allows the user to skip songs-->
                 <!--button id="playPauseBtn" class="btn btn-info" onClick="playPause()">Play/Pause Song</button-->
-                <!--button id="skipBtn" class="btn btn-warning" onClick="skipSong()">Skip Song</button-->
-                <audio id="audio" src="" controls></audio>
-                <div id="songName" style="margin-top: 10px; font-weight: bold;"></div> <!-- Song name will appear here -->
+                
             </div>
         </div>
     </div>
@@ -89,6 +93,7 @@
         <div class="accordion jumbotron text-center">Click to see our Advanced Features</div>
         <div class="panel">
             <p>This is the approach path selections</p>
+            <p class="large-font">Press on the approach path you would like to use</p>
             <button class="approach-button selected" id="none" onclick="selectApproachPath('none')">None</button>
             <button class="approach-button " id="Shallow" onclick="selectApproachPath('Shallow')">Shallow</button>
             <button class="approach-button" id="Linear" onclick="selectApproachPath('Linear')">Linear</button>
@@ -98,11 +103,14 @@
             <button class="approach-button" id="Rollercoaster" onclick="selectApproachPath('Rollercoaster')">Rollercoaster</button>
             <div id="approachPathResult"></div>
            <!--there will be buttons labeled as the apporach paths the user will be allowed to only select one button at a time-->
-            <div class="arrow arrow-up" id="restingHR-up"></div>
-            <div class="arrow arrow-down" id="restingHR-down"></div>
+            
             <label for="restingHR">Resting Heart Rate:</label>
-            <input type="number" id="restingHR" placeholder="Enter resting heart rate" value='70'>
-            <button id="startRestingHR" class="btn btn-primary">Press to get resting heart rate</button>
+            <input type="number" id="restingHR" placeholder="Enter resting heart rate" value='70'class="no-arrows">
+            <button id="startRestingHR" class="btn btn-primary"style="font-size: 20px;  width: 300px; height: 55px;">Press to get Resting Heart Rate</button>
+            <p class="large-font">Use the arrows below to change Resting HR or press the button</p>
+            <div class="arrow arrow-up" id="restingHR-up" ></div>
+            <div class="arrow arrow-down" id="restingHR-down"></div>
+            
             <p id="restingHRResult"></p><!--this will be the resting heart rate value that will be set to 70-->
         </div>                          <!--the user will be able to adjust the resting heart rate -->
     </div>
@@ -327,8 +335,33 @@
                 } else {
                     $("#musicResult").text("Please enter all heart rate values.");
                 }
-            });// this calls the get music function to get all the inputs for the heart rate values to return the right song 
-        });
+            });
+            
+            function validateIntegerInput(inputElement, minValue, maxValue) {
+                inputElement.addEventListener('input', () => {
+                    let value = inputElement.value;
+                    inputElement.value = value.replace(/[^0-9]/g, ''); // Remove any non-numeric characters
+                });
+
+                inputElement.addEventListener('change', () => {
+                    let value = parseInt(inputElement.value);
+                    if (isNaN(value)) {
+                        inputElement.value = minValue; // Reset to minValue if the input is not a number
+                    } else if (value < minValue) {
+                        inputElement.value = minValue;
+                    } else if (value > maxValue) {
+                        inputElement.value = maxValue;
+                    }
+                });
+            }
+
+            const targetHRInput = document.getElementById('targetHR');
+            const restingHRInput = document.getElementById('restingHR');
+
+            validateIntegerInput(targetHRInput, 40, 150);
+            validateIntegerInput(restingHRInput, 50, 150);
+        });// this calls the get music function to get all the inputs for the heart rate values to return the right song 
+        
 
         var isPlaying = false;
         function playPause() {
@@ -362,68 +395,62 @@
             isPlaying = true;
         }
           ///this is the cotrols for the arrows that allow the user to increase or decrease the value for target hr or resting hr
-        const targetHRInput = document.getElementById('targetHR');
-        const arrowUp = document.querySelector('.arrow-up');
-        const arrowDown = document.querySelector('.arrow-down');
-        const restingHRInput = document.getElementById('restingHR');
-        const restingHRUp = document.querySelector('.arrow-up#restingHR-up');
-        const restingHRDown = document.querySelector('.arrow-down#restingHR-down');
+        /// This controls the arrows that allow the user to increase or decrease the value for target hr or resting hr
+const targetHRInput = document.getElementById('targetHR');
+const arrowUp = document.querySelector('.arrow-up');
+const arrowDown = document.querySelector('.arrow-down');
+const restingHRInput = document.getElementById('restingHR');
+const restingHRUp = document.querySelector('.arrow-up#restingHR-up');
+const restingHRDown = document.querySelector('.arrow-down#restingHR-down');
 
-        arrowUp.addEventListener('click', () => {
-            targetHRInput.value = parseInt(targetHRInput.value) + 10;
-            let value = parseInt(targetHRInput.value);
-            if (value < 40) {
-                targetHRInput.value = 40;
-            } else if (value > 150) {
-                targetHRInput.value = 150;
-            }
-        });//the up arrow goes up in increments of 10 and can only reach a max of 150
+const validateTargetHRInput = () => {
+    let value = parseInt(targetHRInput.value);
+    if (isNaN(value) || value < 40) {
+        targetHRInput.value = 40;
+    } else if (value > 150) {
+        targetHRInput.value = 150;
+    }
+};
 
-        arrowDown.addEventListener('click', () => {
-            targetHRInput.value = parseInt(targetHRInput.value) - 10;
-            let value = parseInt(targetHRInput.value);
-            if (value < 40) {
-                targetHRInput.value = 40;
-            } else if (value > 150) {
-                targetHRInput.value = 150;
-            }
-        });///the down arrow for taget hr goes down by 10 and can only go to 40
-        restingHRUp.addEventListener('click', () => {
-            restingHRInput.value = parseInt(restingHRInput.value) + 10;
-            let value = parseInt(restingHRInput.value);
-            if (value < 50) {
-                restingHRInput.value = 40;
-            } else if (value > 150) {
-                restingHRInput.value = 150;
-            }
-        });///the resting hr up goes up by 10 and can only go to 150
+const validateRestingHRInput = () => {
+    let value = parseInt(restingHRInput.value);
+    if (isNaN(value) || value < 50) {
+        restingHRInput.value = 50;
+    } else if (value > 150) {
+        restingHRInput.value = 150;
+    }
+};
 
-        restingHRDown.addEventListener('click', () => {
-            restingHRInput.value = parseInt(restingHRInput.value) - 10;
-            let value = parseInt(restingHRInput.value);
-            if (value < 50) {
-                restingHRInput.value = 40;
-            } else if (value > 150) {
-                restingHRInput.value = 150;
-            }
-        });// the resitng hr down arrow goes down by 10 and can only go down to 40
+const ensureIntInput = (event) => {
+    event.target.value = event.target.value.replace(/[^\d]/g, '');
+};
 
-        targetHRInput.addEventListener('input', () => {
-            let value = parseInt(targetHRInput.value);
-            if (value < 40) {
-                targetHRInput.value = 40;
-            } else if (value > 150) {
-                targetHRInput.value = 150;
-            }
-        });//this sets the target heart rate max to 150 and min  to 40 and shows the box already filled with the value
-        restingHRInput.addEventListener('input', () => {
-            let value = parseInt(restingHRInput.value);
-            if (value < 50) {
-                restingHRInput.value = 40;
-            } else if (value > 150) {
-                restingHRInput.value = 150;
-            }
-        });///this sets the range for resting hr beteen 40-150
+arrowUp.addEventListener('click', () => {
+    targetHRInput.value = Math.min(parseInt(targetHRInput.value) + 10, 150);
+    validateTargetHRInput();
+}); // the up arrow goes up in increments of 10 and can only reach a max of 150
+
+arrowDown.addEventListener('click', () => {
+    targetHRInput.value = Math.max(parseInt(targetHRInput.value) - 10, 40);
+    validateTargetHRInput();
+}); // the down arrow for target hr goes down by 10 and can only go to 40
+
+restingHRUp.addEventListener('click', () => {
+    restingHRInput.value = Math.min(parseInt(restingHRInput.value) + 10, 150);
+    validateRestingHRInput();
+}); // the resting hr up goes up by 10 and can only go to 150
+
+restingHRDown.addEventListener('click', () => {
+    restingHRInput.value = Math.max(parseInt(restingHRInput.value) - 10, 50);
+    validateRestingHRInput();
+}); // the resting hr down arrow goes down by 10 and can only go down to 50
+
+targetHRInput.addEventListener('input', ensureIntInput);
+targetHRInput.addEventListener('blur', validateTargetHRInput); // this sets the target heart rate max to 150 and min to 40
+
+restingHRInput.addEventListener('input', ensureIntInput);
+restingHRInput.addEventListener('blur', validateRestingHRInput); // this sets the resting heart rate max to 150 and min to 50
+///this sets the range for resting hr beteen 40-150
     </script>
     
 </body>
