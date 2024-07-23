@@ -136,22 +136,7 @@ tbody {
     margin: 0;
     padding: 0;
 }
-.start-button {
-    margin-top: 20px;
-    height: 150;
-    width: 50;
-    font-size: 24px;
-    color: white;
-    background-color: green;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
 
-
-.start-button:hover {
-    background-color: darkgreen;
-}
 body {
     background: white;
     margin: 0 10%;
@@ -226,10 +211,11 @@ body {
 
 .start-button {
     margin-top: 20px;
-    width: 200px;
-    height: 100;
+    margin-bottom: 20px;
+    width: 350px;
+    height: 175px;
     
-    font-size: 24px;
+    font-size: 48px;
     color: white;
     background-color: green;
     border: none;
@@ -297,6 +283,7 @@ div{
 }
 p{
     font-size: 40px;
+    margin-top: 40px;
 }
 p1{
     font-size: 40px;
@@ -315,3 +302,23 @@ p1{
 .file-drop-box.dragover {
     border-color: green;
 }
+/* Chrome, Safari, Edge, Opera */
+.no-arrows::-webkit-outer-spin-button,
+.no-arrows::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+img {
+    border-top: 20px;
+}
+#p2{
+    font-size: 40px;
+}
+.large-font {
+    font-size: 20px; /* You can adjust this value as needed */
+}
+label{
+    font-size: 20px;
+}
+
+
