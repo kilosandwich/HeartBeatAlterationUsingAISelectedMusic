@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <style>
-        
         body {
             background-color: maroon;
             margin: 0 10%;
@@ -64,7 +63,7 @@
     in the first container we have the image of a heart and below the heart are arrows that will control the target heart rate value-->
     <div id="div1">
         <div class="arrow-container">    
-            <img src="{{ url_for('static', filename='images/Logo.png') }}" height="250"  alt="Heart Rate Monitor"style="margin-top: 20px;"style="margin-bottom: 20px;">
+            <img src="{{ url_for('static', filename='images/Logo.png') }}" height="250" alt="Heart Rate Monitor" style="margin-top: 20px; margin-bottom: 20px;">
             
             <p style="font-size: 60px;">Target Heart Rate</p><!--this is the label for target heart rate-->
             <input type="number" id="targetHR" placeholder="Enter target heart rate" value="70" class="no-arrows">
@@ -72,7 +71,8 @@
 
             <div class="arrow arrow-up"></div><div class="arrow arrow-down"></div>
             <!--this is the target heart rate box that is set to 80, you change the default by changing the value-->
-            <button class="start-button" onclick="startMonitoring()">Start</button>
+            <button id="startButton" class="start-button" onclick="startMonitoring()">Start</button>
+            <button id="skipButton" class="btn btn-warning" onclick="skipSong()" style="display: none;">Skip</button>
             <!--this is the start button which the user will press to start everything and get a music choice-->
 
            <!--this is the audio player the player is hidden since the display is set to none
@@ -80,7 +80,6 @@
             <div id="audioPlayer" style="display:none;text-align: center;">
                 <p id="songName" style="font-size: 20px; margin-bottom: 10px;">Song Name</p><!-- Song name will appear here -->
                 <audio id="audio" src="" controls style="display: block; margin: 0 auto;"></audio>
-                <button id="skipBtn" class="btn btn-warning" onClick="skipSong()" style="display: block; margin: 10px auto;">Skip Song</button>
                 <!--this is the skup button that allows the user to skip songs-->
                 <!--button id="playPauseBtn" class="btn btn-info" onClick="playPause()">Play/Pause Song</button-->
                 
@@ -95,7 +94,7 @@
             <p>This is the approach path selections</p>
             <p class="large-font">Press on the approach path you would like to use</p>
             <button class="approach-button selected" id="none" onclick="selectApproachPath('none')">None</button>
-            <button class="approach-button " id="Shallow" onclick="selectApproachPath('Shallow')">Shallow</button>
+            <button class="approach-button" id="Shallow" onclick="selectApproachPath('Shallow')">Shallow</button>
             <button class="approach-button" id="Linear" onclick="selectApproachPath('Linear')">Linear</button>
             <button class="approach-button" id="Steep" onclick="selectApproachPath('Steep')">Steep</button>
             <button class="approach-button" id="Parabola" onclick="selectApproachPath('Parabola')">Parabola</button>
@@ -105,10 +104,10 @@
            <!--there will be buttons labeled as the apporach paths the user will be allowed to only select one button at a time-->
             
             <label for="restingHR">Resting Heart Rate:</label>
-            <input type="number" id="restingHR" placeholder="Enter resting heart rate" value='70'class="no-arrows">
-            <button id="startRestingHR" class="btn btn-primary"style="font-size: 20px;  width: 300px; height: 55px;">Press to get Resting Heart Rate</button>
+            <input type="number" id="restingHR" placeholder="Enter resting heart rate" value='70' class="no-arrows">
+            <button id="startRestingHR" class="btn btn-primary" style="font-size: 20px; width: 300px; height: 55px;">Press to get Resting Heart Rate</button>
             <p class="large-font">Use the arrows below to change Resting HR or press the button</p>
-            <div class="arrow arrow-up" id="restingHR-up" ></div>
+            <div class="arrow arrow-up" id="restingHR-up"></div>
             <div class="arrow arrow-down" id="restingHR-down"></div>
             
             <p id="restingHRResult"></p><!--this will be the resting heart rate value that will be set to 70-->
@@ -124,6 +123,8 @@
               <!--this is the apporach path selection that is set to have none selected by default,until the user sleects a path-->
     <script> 
         var selectedApproachPath = 'None';
+        var recommendedSongs = [];
+        var currentSongIndex = 0;
 
         function selectApproachPath(path) {
             selectedApproachPath = path;
@@ -148,7 +149,8 @@
                 }
             });
         }
-        //this is the start monitoring for the start buton that takes the input of the target resting hr and 
+
+        //this is the start monitoring for the start button that takes the input of the target resting hr and 
         //approach path the user selected or it will return the message that the user needs to enter a target or resting heart rate
         function startMonitoring() {
             var targetHR = $("#targetHR").val();
@@ -186,6 +188,8 @@
                             $("#audioPlayer").show();
                             $("#audio").attr("src", songPath);
                             $("#songName").text(`Now Playing: ${songName}`);
+                            $("#skipButton").show(); // Show the skip button after starting
+                            $("#startButton").hide(); // Hide the start button after starting
                         } else {
                             $("#musicResult").text("No suitable music found.");
                         }
@@ -196,6 +200,21 @@
                 }
             });   // this is the audio player that gets returned when the user presses the start button and the inputs are read
                  //it will show the song name with the audio player or it will give the error message 
+        }
+
+        function skipSong() {
+            // This function will be called when the Skip button is pressed
+            //  to skip to the next song after the user presses the start button
+            if (recommendedSongs.length > 0) {
+                currentSongIndex = (currentSongIndex + 1) % recommendedSongs.length;
+                let songPath = recommendedSongs[currentSongIndex];
+                $("#audio").attr("src", songPath);
+                let songName = songPath.substring(songPath.lastIndexOf('/') + 1);
+                $("#songName").text(`Now Playing: ${songName}`);
+                document.getElementById('audio').play();
+            } else {
+                $("#musicResult").text("No more songs to play.");
+            }
         }
 
         $(document).ready(function() {
@@ -230,7 +249,7 @@
                 uploadBox.classList.remove('dragover');
                 var files = e.dataTransfer.files;
                 handleFiles(files);
-            }); //this is the upload box that allows the user ot either upload a file or drag and drop a file
+            }); //this is the upload box that allows the user to either upload a file or drag and drop a file
 
             uploadBox.addEventListener('click', function(e) {
                 fileInput.click();
@@ -247,7 +266,7 @@
                         alert('Only MP3 files are allowed!');
                         return;
                     }
-                    uploadFile(files[i]);// this ensures that only mp3 files are accpeted
+                    uploadFile(files[i]);// this ensures that only mp3 files are accepted
                 }
             }
 
@@ -372,18 +391,9 @@
                 audio.play();
             }
             isPlaying = !isPlaying;
-        } //this is the audio control that allow the user to pauase and play the song
+        } //this is the audio control that allow the user to pause and play the song
 
-        function skipSong() {
-            if (recommendedSongs.length > 0) {
-                currentSongIndex = (currentSongIndex + 1) % recommendedSongs.length;
-                loadSong(currentSongIndex);
-                playSong();
-            } else {
-                $("#musicResult").text("No more songs to play.");
-            }  ////this is the skip button that should allow the user to skip the song 
-        }
-
+        
         function loadSong(index) {
             const audio = document.getElementById('audio');
             audio.src = recommendedSongs[index];
@@ -394,7 +404,7 @@
             audio.play();
             isPlaying = true;
         }
-          ///this is the cotrols for the arrows that allow the user to increase or decrease the value for target hr or resting hr
+          ///this is the controls for the arrows that allow the user to increase or decrease the value for target hr or resting hr
         /// This controls the arrows that allow the user to increase or decrease the value for target hr or resting hr
 const targetHRInput = document.getElementById('targetHR');
 const arrowUp = document.querySelector('.arrow-up');
@@ -455,28 +465,3 @@ restingHRInput.addEventListener('blur', validateRestingHRInput); // this sets th
     
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
