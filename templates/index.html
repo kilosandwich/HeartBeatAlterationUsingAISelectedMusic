@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" IE="edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heart Rate Music</title> 
-    <!--this tis the title of the webpage that will appear when the app is loaded-->
+    <title>Heart Rate Music</title>
+    <!-- This is the title of the webpage that will appear when the app is loaded -->
     
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
@@ -15,9 +15,9 @@
             background-color: maroon;
             margin: 0 10%;
             font-family: sans-serif;
-        }   
+        }
         .upload-box {
-            border: 2px  #ccc;
+            border: 2px #ccc;
             border-radius: 20px;
             width: 100%;
             height: 100px;
@@ -47,7 +47,8 @@
         }
     </style>
 </head>
-<body><!--this is the nav bar with the spacinf and the things inlcuded to show the different tabs-->
+<body>
+    <!-- This is the nav bar with the spacing and the links included to show different tabs -->
     <nav class="navbar">
         <div class="navdiv">
             <div class="logo">
@@ -59,39 +60,40 @@
             </ul>
         </div>
     </nav>
-    <!--we divided the home page into div containers
-    in the first container we have the image of a heart and below the heart are arrows that will control the target heart rate value-->
+    
+    <!-- We divided the home page into div containers -->
+    <!-- In the first container, we have the image of a heart and below the heart are arrows that will control the target heart rate value -->
     <div id="div1">
-        <div class="arrow-container">    
+        <div class="arrow-container">
             <img src="{{ url_for('static', filename='images/Logo.png') }}" height="250" alt="Heart Rate Monitor" style="margin-top: 20px; margin-bottom: 20px;">
             
-            <p style="font-size: 60px;">Target Heart Rate</p><!--this is the label for target heart rate-->
+            <p style="font-size: 60px;">Target Heart Rate</p>
+            <!-- This is the label for target heart rate -->
             <input type="number" id="targetHR" placeholder="Enter target heart rate" value="70" class="no-arrows">
             <p class="large-font">Use the arrows below to change the value for Target Heart Rate</p>
 
             <div class="arrow arrow-up"></div><div class="arrow arrow-down"></div>
-            <!--this is the target heart rate box that is set to 80, you change the default by changing the value-->
-            <button id="startButton" class="start-button" onclick="startMonitoring()">Start</button>
-            <button id="skipButton" class="btn btn-warning" onclick="skipSong()" style="display: none;">Skip</button>
-            <!--this is the start button which the user will press to start everything and get a music choice-->
+            <!-- This is the target heart rate box that is set to 70; you change the default by changing the value -->
+            <button class="start-button" onclick="startMonitoring()">Start</button>
+            <!-- This is the start button which the user will press to start everything and get a music choice -->
 
-           <!--this is the audio player the player is hidden since the display is set to none
-           when the song appears it will have a pause and play button next to it -->
+            <!-- This is the audio player. The player is hidden since the display is set to none.
+            When the song appears, it will have a pause and play button next to it -->
             <div id="audioPlayer" style="display:none;text-align: center;">
                 <p id="songName" style="font-size: 20px; margin-bottom: 10px;">Song Name</p><!-- Song name will appear here -->
                 <audio id="audio" src="" controls style="display: block; margin: 0 auto;"></audio>
-                <!--this is the skup button that allows the user to skip songs-->
-                <!--button id="playPauseBtn" class="btn btn-info" onClick="playPause()">Play/Pause Song</button-->
-                
+                <button id="skipBtn" class="btn btn-warning" onClick="skipSong()" style="display: block; margin: 10px auto;">Skip Song</button>
+                <!-- This is the skip button that allows the user to skip songs -->
             </div>
         </div>
     </div>
-    <!--this is div 2 it will be labeled as the click to see our advanced features the advanced features will be a drop down that has the 
-    advanced features -->
+    
+    <!-- This is div 2, labeled as "Click to see our Advanced Features" -->
+    <!-- The advanced features will be a drop-down that has the advanced features -->
     <div id="div2">
         <div class="accordion jumbotron text-center">Click to see our Advanced Features</div>
         <div class="panel">
-            <p>This is the approach path selections</p>
+            <p>This is the approach path selection</p>
             <p class="large-font">Press on the approach path you would like to use</p>
             <button class="approach-button selected" id="none" onclick="selectApproachPath('none')">None</button>
             <button class="approach-button" id="Shallow" onclick="selectApproachPath('Shallow')">Shallow</button>
@@ -101,7 +103,7 @@
             <button class="approach-button" id="Fastest" onclick="selectApproachPath('Fastest')">Fastest</button>
             <button class="approach-button" id="Rollercoaster" onclick="selectApproachPath('Rollercoaster')">Rollercoaster</button>
             <div id="approachPathResult"></div>
-           <!--there will be buttons labeled as the apporach paths the user will be allowed to only select one button at a time-->
+            <!-- There will be buttons labeled as the approach paths. The user will be allowed to only select one button at a time -->
             
             <label for="restingHR">Resting Heart Rate:</label>
             <input type="number" id="restingHR" placeholder="Enter resting heart rate" value='70' class="no-arrows">
@@ -109,22 +111,22 @@
             <p class="large-font">Use the arrows below to change Resting HR or press the button</p>
             <div class="arrow arrow-up" id="restingHR-up"></div>
             <div class="arrow arrow-down" id="restingHR-down"></div>
-            
-            <p id="restingHRResult"></p><!--this will be the resting heart rate value that will be set to 70-->
-        </div>                          <!--the user will be able to adjust the resting heart rate -->
+            <p id="restingHRResult"></p><!-- This will be the resting heart rate value that will be set to 70 -->
+            <!-- The user will be able to adjust the resting heart rate -->
+        </div>
     </div>
     
-    <div id="div3"><!--this is the upload box that only accepts mp3 files you can either drag or drop files-->
+    <!-- This is div 3 -->
+    <!-- This is the upload box that only accepts mp3 files. You can either drag or drop files -->
+    <div id="div3">
         <div class="upload-box" id="uploadBox">
             Drag and drop MP3 files here or click to upload
             <input type="file" id="fileInput" accept=".mp3" style="display: none;">
         </div>
     </div>
-              <!--this is the apporach path selection that is set to have none selected by default,until the user sleects a path-->
+
     <script> 
         var selectedApproachPath = 'None';
-        var recommendedSongs = [];
-        var currentSongIndex = 0;
 
         function selectApproachPath(path) {
             selectedApproachPath = path;
@@ -150,8 +152,9 @@
             });
         }
 
-        //this is the start monitoring for the start button that takes the input of the target resting hr and 
-        //approach path the user selected or it will return the message that the user needs to enter a target or resting heart rate
+        // This is the start monitoring function for the start button
+        // It takes the input of the target heart rate, resting heart rate, and approach path the user selected
+        // Or it will return a message that the user needs to enter a target or resting heart rate
         function startMonitoring() {
             var targetHR = $("#targetHR").val();
             var restingHR = $("#restingHR").val();
@@ -178,7 +181,6 @@
                     approachPath: selectedApproachPath
                 }),
                 success: function(data) {
-                    console.log(data);
                     if (data.error) {
                         $("#musicResult").text(data.error);
                     } else {
@@ -188,8 +190,6 @@
                             $("#audioPlayer").show();
                             $("#audio").attr("src", songPath);
                             $("#songName").text(`Now Playing: ${songName}`);
-                            $("#skipButton").show(); // Show the skip button after starting
-                            $("#startButton").hide(); // Hide the start button after starting
                         } else {
                             $("#musicResult").text("No suitable music found.");
                         }
@@ -198,23 +198,48 @@
                 error: function(error) {
                     $("#musicResult").text("Error getting music recommendation.");
                 }
-            });   // this is the audio player that gets returned when the user presses the start button and the inputs are read
-                 //it will show the song name with the audio player or it will give the error message 
+            });
         }
 
+        // This function handles the song skipping logic
+        // It works similar to startMonitoring but allows the user to skip to the next song
         function skipSong() {
-            // This function will be called when the Skip button is pressed
-            //  to skip to the next song after the user presses the start button
-            if (recommendedSongs.length > 0) {
-                currentSongIndex = (currentSongIndex + 1) % recommendedSongs.length;
-                let songPath = recommendedSongs[currentSongIndex];
-                $("#audio").attr("src", songPath);
-                let songName = songPath.substring(songPath.lastIndexOf('/') + 1);
-                $("#songName").text(`Now Playing: ${songName}`);
-                document.getElementById('audio').play();
-            } else {
-                $("#musicResult").text("No more songs to play.");
+            var targetHR = $("#targetHR").val();
+            var restingHR = $("#restingHR").val();
+
+            if (!targetHR || !restingHR) {
+                alert("Please enter both target and resting heart rates.");
+                return;
             }
+
+            $.ajax({
+                url: "/start",  // Adjust if you have a separate route for skipping songs
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    targetHR: targetHR,
+                    restingHR: restingHR,
+                    approachPath: selectedApproachPath
+                }),
+                success: function(data) {
+                    if (data.error) {
+                        $("#musicResult").text(data.error);
+                    } else {
+                        if (data.selected_music) {
+                            let songPath = data.selected_music;
+                            let songName = songPath.substring(songPath.lastIndexOf('/') + 1);
+                            $("#audio").attr("src", songPath);
+                            $("#songName").text(`Now Playing: ${songName}`);
+                            $("#audio")[0].play();  // Automatically play the new song
+                        } else {
+                            $("#musicResult").text("No suitable music found.");
+                        }
+                    }
+                },
+                error: function(error) {
+                    $("#musicResult").text("Error getting music recommendation.");
+                }
+            });
         }
 
         $(document).ready(function() {
@@ -230,7 +255,7 @@
                         panel.style.display = "block";
                     }
                 });
-            });// style elements for the nav bar and the start button
+            }); // Style elements for the nav bar and the start button
 
             var uploadBox = document.getElementById('uploadBox');
             var fileInput = document.getElementById('fileInput');
@@ -249,7 +274,7 @@
                 uploadBox.classList.remove('dragover');
                 var files = e.dataTransfer.files;
                 handleFiles(files);
-            }); //this is the upload box that allows the user to either upload a file or drag and drop a file
+            }); // This is the upload box that allows the user to either upload a file or drag and drop a file
 
             uploadBox.addEventListener('click', function(e) {
                 fileInput.click();
@@ -266,7 +291,7 @@
                         alert('Only MP3 files are allowed!');
                         return;
                     }
-                    uploadFile(files[i]);// this ensures that only mp3 files are accepted
+                    uploadFile(files[i]); // This ensures that only MP3 files are accepted
                 }
             }
 
@@ -288,7 +313,7 @@
                     }
                 });
             }
-        
+
             $("#startRestingHR").click(function(){
                 $.ajax({
                     url: "/start_resting_hr_monitor",
@@ -379,8 +404,7 @@
 
             validateIntegerInput(targetHRInput, 40, 150);
             validateIntegerInput(restingHRInput, 50, 150);
-        });// this calls the get music function to get all the inputs for the heart rate values to return the right song 
-        
+        });
 
         var isPlaying = false;
         function playPause() {
@@ -391,9 +415,9 @@
                 audio.play();
             }
             isPlaying = !isPlaying;
-        } //this is the audio control that allow the user to pause and play the song
+        } // This is the audio control that allows the user to pause and play the song
 
-        
+        // This function handles loading and playing songs
         function loadSong(index) {
             const audio = document.getElementById('audio');
             audio.src = recommendedSongs[index];
@@ -404,64 +428,90 @@
             audio.play();
             isPlaying = true;
         }
-          ///this is the controls for the arrows that allow the user to increase or decrease the value for target hr or resting hr
-        /// This controls the arrows that allow the user to increase or decrease the value for target hr or resting hr
-const targetHRInput = document.getElementById('targetHR');
-const arrowUp = document.querySelector('.arrow-up');
-const arrowDown = document.querySelector('.arrow-down');
-const restingHRInput = document.getElementById('restingHR');
-const restingHRUp = document.querySelector('.arrow-up#restingHR-up');
-const restingHRDown = document.querySelector('.arrow-down#restingHR-down');
 
-const validateTargetHRInput = () => {
-    let value = parseInt(targetHRInput.value);
-    if (isNaN(value) || value < 40) {
-        targetHRInput.value = 40;
-    } else if (value > 150) {
-        targetHRInput.value = 150;
-    }
-};
+        // This controls the arrows that allow the user to increase or decrease the value for target HR or resting HR
+        const targetHRInput = document.getElementById('targetHR');
+        const arrowUp = document.querySelector('.arrow-up');
+        const arrowDown = document.querySelector('.arrow-down');
+        const restingHRInput = document.getElementById('restingHR');
+        const restingHRUp = document.querySelector('.arrow-up#restingHR-up');
+        const restingHRDown = document.querySelector('.arrow-down#restingHR-down');
 
-const validateRestingHRInput = () => {
-    let value = parseInt(restingHRInput.value);
-    if (isNaN(value) || value < 50) {
-        restingHRInput.value = 50;
-    } else if (value > 150) {
-        restingHRInput.value = 150;
-    }
-};
+        const validateTargetHRInput = () => {
+            let value = parseInt(targetHRInput.value);
+            if (isNaN(value) || value < 40) {
+                targetHRInput.value = 40;
+            } else if (value > 150) {
+                targetHRInput.value = 150;
+            }
+        };
 
-const ensureIntInput = (event) => {
-    event.target.value = event.target.value.replace(/[^\d]/g, '');
-};
+        const validateRestingHRInput = () => {
+            let value = parseInt(restingHRInput.value);
+            if (isNaN(value) || value < 50) {
+                restingHRInput.value = 50;
+            } else if (value > 150) {
+                restingHRInput.value = 150;
+            }
+        };
 
-arrowUp.addEventListener('click', () => {
-    targetHRInput.value = Math.min(parseInt(targetHRInput.value) + 10, 150);
-    validateTargetHRInput();
-}); // the up arrow goes up in increments of 10 and can only reach a max of 150
+        const ensureIntInput = (event) => {
+            event.target.value = event.target.value.replace(/[^\d]/g, '');
+        };
 
-arrowDown.addEventListener('click', () => {
-    targetHRInput.value = Math.max(parseInt(targetHRInput.value) - 10, 40);
-    validateTargetHRInput();
-}); // the down arrow for target hr goes down by 10 and can only go to 40
+        arrowUp.addEventListener('click', () => {
+            targetHRInput.value = Math.min(parseInt(targetHRInput.value) + 10, 150);
+            validateTargetHRInput();
+        }); // The up arrow goes up in increments of 10 and can only reach a max of 150
 
-restingHRUp.addEventListener('click', () => {
-    restingHRInput.value = Math.min(parseInt(restingHRInput.value) + 10, 150);
-    validateRestingHRInput();
-}); // the resting hr up goes up by 10 and can only go to 150
+        arrowDown.addEventListener('click', () => {
+            targetHRInput.value = Math.max(parseInt(targetHRInput.value) - 10, 40);
+            validateTargetHRInput();
+        }); // The down arrow for target HR goes down by 10 and can only go to 40
 
-restingHRDown.addEventListener('click', () => {
-    restingHRInput.value = Math.max(parseInt(restingHRInput.value) - 10, 50);
-    validateRestingHRInput();
-}); // the resting hr down arrow goes down by 10 and can only go down to 50
+        restingHRUp.addEventListener('click', () => {
+            restingHRInput.value = Math.min(parseInt(restingHRInput.value) + 10, 150);
+            validateRestingHRInput();
+        }); // The resting HR up goes up by 10 and can only go to 150
 
-targetHRInput.addEventListener('input', ensureIntInput);
-targetHRInput.addEventListener('blur', validateTargetHRInput); // this sets the target heart rate max to 150 and min to 40
+        restingHRDown.addEventListener('click', () => {
+            restingHRInput.value = Math.max(parseInt(restingHRInput.value) - 10, 50);
+            validateRestingHRInput();
+        }); // The resting HR down arrow goes down by 10 and can only go down to 50
 
-restingHRInput.addEventListener('input', ensureIntInput);
-restingHRInput.addEventListener('blur', validateRestingHRInput); // this sets the resting heart rate max to 150 and min to 50
-///this sets the range for resting hr beteen 40-150
+        targetHRInput.addEventListener('input', ensureIntInput);
+        targetHRInput.addEventListener('blur', validateTargetHRInput); // This sets the target heart rate max to 150 and min to 40
+
+        restingHRInput.addEventListener('input', ensureIntInput);
+        restingHRInput.addEventListener('blur', validateRestingHRInput); // This sets the resting heart rate max to 150 and min to 50
     </script>
     
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
