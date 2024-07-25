@@ -206,6 +206,7 @@
                             $("#audio").attr("src", songPath);
                             $("#songName").text(`Now Playing: ${songName}`);
                             lastPlayedSong = songPath; // Store the current song
+                            $("#audio")[0].play(); // auto play the song after the start is pressed
                             $("#optimalSongMessage").hide(); // Hide the optimal song message
                         } else {
                             $("#musicResult").text("No suitable music found.");
