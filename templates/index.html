@@ -45,6 +45,18 @@
             background-color: #333;
             color: #fff;
         }
+        /* Additional styling for optimal song message */
+        #optimalSongMessage {
+            display: none;
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -85,6 +97,8 @@
                 <button id="skipBtn" class="btn btn-warning" onClick="skipSong()" style="display: block; margin: 10px auto;">Skip Song</button>
                 <!-- This is the skip button that allows the user to skip songs -->
             </div>
+            <!-- Optimal song message -->
+            <div id="optimalSongMessage">The same song is playing, since it's the most optimal song for your target HR.</div>
         </div>
     </div>
     
@@ -125,8 +139,9 @@
         </div>
     </div>
 
-    <script> 
+    <script>
         var selectedApproachPath = 'None';
+        var lastPlayedSong = "";
 
         function selectApproachPath(path) {
             selectedApproachPath = path;
@@ -190,6 +205,8 @@
                             $("#audioPlayer").show();
                             $("#audio").attr("src", songPath);
                             $("#songName").text(`Now Playing: ${songName}`);
+                            lastPlayedSong = songPath; // Store the current song
+                            $("#optimalSongMessage").hide(); // Hide the optimal song message
                         } else {
                             $("#musicResult").text("No suitable music found.");
                         }
@@ -213,7 +230,7 @@
             }
 
             $.ajax({
-                url: "/start",  // Adjust if you have a separate route for skipping songs
+                url: "/start",  // this is the route for skipping songs
                 method: "POST",
                 contentType: "application/json",
                 data: JSON.stringify({
@@ -230,7 +247,16 @@
                             let songName = songPath.substring(songPath.lastIndexOf('/') + 1);
                             $("#audio").attr("src", songPath);
                             $("#songName").text(`Now Playing: ${songName}`);
-                            $("#audio")[0].play();  // Automatically play the new song
+                            $("#audio")[0].play();  // get and autoplay the new song
+                            
+                            // Check if the new song is the same as the last played song
+                            if (lastPlayedSong === songPath) {
+                                $("#optimalSongMessage").show(); // Show the optimal song message
+                            } else {
+                                $("#optimalSongMessage").hide(); // Hide the optimal song message
+                            }
+
+                            lastPlayedSong = songPath; // Update the last played song
                         } else {
                             $("#musicResult").text("No suitable music found.");
                         }
@@ -255,7 +281,7 @@
                         panel.style.display = "block";
                     }
                 });
-            }); // Style elements for the nav bar and the start button
+            }); // Style elements for the nav bar and the start button to have the block appearance and allow the user to click on 
 
             var uploadBox = document.getElementById('uploadBox');
             var fileInput = document.getElementById('fileInput');
@@ -384,7 +410,7 @@
             function validateIntegerInput(inputElement, minValue, maxValue) {
                 inputElement.addEventListener('input', () => {
                     let value = inputElement.value;
-                    inputElement.value = value.replace(/[^0-9]/g, ''); // Remove any non-numeric characters
+                    inputElement.value = value.replace(/[^0-9]/g, ''); // Remove any non-numeric characters and only allow the user to enter int values
                 });
 
                 inputElement.addEventListener('change', () => {
@@ -404,6 +430,9 @@
 
             validateIntegerInput(targetHRInput, 40, 150);
             validateIntegerInput(restingHRInput, 50, 150);
+
+            // this will autoplay next song when current song ends
+            document.getElementById('audio').addEventListener('ended', skipSong);
         });
 
         var isPlaying = false;
@@ -488,6 +517,7 @@
     
 </body>
 </html>
+
 
 
 
