@@ -23,8 +23,8 @@
             height: 100px;
             text-align: center;
             line-height: 100px;
-            font-size: 16px;
-            color: #ccc;
+            font-size: 20px;
+            color: black;
             margin-top: 20px;
             margin-bottom: 20px;
         }
@@ -76,31 +76,45 @@
     <!-- We divided the home page into div containers -->
     <!-- In the first container, we have the image of a heart and below the heart are arrows that will control the target heart rate value -->
     <div id="div1">
-        <div class="arrow-container">
+        <div class="main-section">
             <img src="{{ url_for('static', filename='images/Logo.png') }}" height="250" alt="Heart Rate Monitor" style="margin-top: 20px; margin-bottom: 20px;">
             
             <p style="font-size: 60px;">Target Heart Rate</p>
-            <!-- This is the label for target heart rate -->
-            <input type="number" id="targetHR" placeholder="Enter target heart rate" value="70" class="no-arrows">
-            <p class="large-font">Use the arrows below to change the value for Target Heart Rate</p>
-
-            <div class="arrow arrow-up"></div><div class="arrow arrow-down"></div>
-            <!-- This is the target heart rate box that is set to 70; you change the default by changing the value -->
-            <button class="start-button" onclick="startMonitoring()">Start</button>
-            <!-- This is the start button which the user will press to start everything and get a music choice -->
-
-            <!-- This is the audio player. The player is hidden since the display is set to none.
-            When the song appears, it will have a pause and play button next to it -->
+            
+            <!-- Wrapper for input and arrows -->
+            <div class="input-arrow-container">
+                <input type="number" id="targetHR" placeholder="Enter target heart rate" value="70" class="no-arrows">
+                <div class="arrow-container">
+                    <div class="arrow arrow-up"></div>
+                    <div class="arrow arrow-down"></div>
+                    <div class="help-container">
+                        <span class="help-text">?</span>
+                        <div class="help-message">Use the arrows to change the value for Target Heart Rate</div>
+                    </div>
+                </div>
+            </div>
+            
+           
+            <div class="start-button-container">
+                <button class="start-button" onclick="startMonitoring()">Start</button>
+                <div class="help-container">
+                    <span class="help-text">?</span>
+                    <div class="help-message">Press to start monitoring your heart rate and get music .</div>
+                </div>
+            </div>
+            
+           
+    
             <div id="audioPlayer" style="display:none;text-align: center;">
-                <p id="songName" style="font-size: 20px; margin-bottom: 10px;">Song Name</p><!-- Song name will appear here -->
+                <p id="songName" style="font-size: 20px; margin-bottom: 10px;">Song Name</p>
                 <audio id="audio" src="" controls style="display: block; margin: 0 auto;"></audio>
                 <button id="skipBtn" class="btn btn-warning" onClick="skipSong()" style="display: block; margin: 10px auto;">Skip Song</button>
-                <!-- This is the skip button that allows the user to skip songs -->
             </div>
-            <!-- Optimal song message -->
+            
             <div id="optimalSongMessage">The same song is playing, since it's the most optimal song for your target HR.</div>
         </div>
     </div>
+    
     
     <!-- This is div 2, labeled as "Click to see our Advanced Features" -->
     <!-- The advanced features will be a drop-down that has the advanced features -->
@@ -117,15 +131,44 @@
             <button class="approach-button" id="Fastest" onclick="selectApproachPath('Fastest')">Fastest</button>
             <button class="approach-button" id="Rollercoaster" onclick="selectApproachPath('Rollercoaster')">Rollercoaster</button>
             <div id="approachPathResult"></div>
-            <!-- There will be buttons labeled as the approach paths. The user will be allowed to only select one button at a time -->
             
-            <label for="restingHR">Resting Heart Rate:</label>
-            <input type="number" id="restingHR" placeholder="Enter resting heart rate" value='70' class="no-arrows">
-            <button id="startRestingHR" class="btn btn-primary" style="font-size: 20px; width: 300px; height: 55px;">Press to get Resting Heart Rate</button>
-            <p class="large-font">Use the arrows below to change Resting HR or press the button</p>
-            <div class="arrow arrow-up" id="restingHR-up"></div>
-            <div class="arrow arrow-down" id="restingHR-down"></div>
-            <p id="restingHRResult"></p><!-- This will be the resting heart rate value that will be set to 70 -->
+            <!-- Resting HR input and controls -->
+            <div class="input-arrow-container">
+                <label for="restingHR"style="font-size: 30px; font-weight: bold;">Resting Heart Rate:</label>
+                <input type="number" id="restingHR" placeholder="Enter resting heart rate" value='70' class="no-arrows">
+                <div class="arrow-buttons">
+                    <div class="arrow arrow-up" id="restingHR-up"></div>
+                    <div class="arrow arrow-down" id="restingHR-down"></div>
+                    <div class="kind-container">
+                        <span class="kind-text">?</span>
+                        <div class="kind-message">Use the arrows to change the value for resting heart rate or press the button</div>
+                    </div>
+                
+            </div>
+            
+                <button id="startRestingHR" class="btn btn-primary">Get Resting Heart Rate</button>
+                <div class="kind-container">
+                    <span class="kind-text">?</span>
+                    <div class="kind-message">Use the arrows to change the value for resting heart rate or press the button</div>
+                </div>
+            </div>
+            <p id="restingHRResult"></p> <!-- This will display the heart rate result -->
+    
+            <div class="start-hr-container">
+                <div class="help-container">
+                    <span class="help-text">?</span>
+                    <div class="help-message">Use the arrows to change the value for resting heart rate or press the button</div>
+                    <p id="restingHRResult"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+            
+            
+
+          
+        <p id="restingHRResult"></p><!-- This will be the resting heart rate value that will be set to 70 -->
             <!-- The user will be able to adjust the resting heart rate -->
         </div>
     </div>
