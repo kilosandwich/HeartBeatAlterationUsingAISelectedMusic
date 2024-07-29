@@ -234,7 +234,7 @@ input[type="number"].no-arrows {
     margin-bottom: 20px;
     width: 300px;
     height: 125px;
-    margin-right: 20px;
+    margin-right: 10px;
     
     font-size: 48px;
     color: white;
@@ -350,6 +350,7 @@ audio#audio {
     
 }
 
+
 /* Style for the skip button */
 button#skipBtn {
     font-size: 18px; /* Increase font size for larger text */
@@ -439,11 +440,12 @@ button#skipBtn {
     z-index: 1;
     bottom: 100%; /* Position the message above the text */
     left: 50%;
+    right: 50%;
     transform: translateX(-50%);
     box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
     font-size: 14px;
-    margin-right: 20px;
-    margin-left: 20px;
+    margin-right: 100px;
+    margin-left: 10px;
 }
 
 .help-container:hover .help-message {
@@ -502,6 +504,7 @@ button#skipBtn {
 
 .help-message {
     visibility: hidden;
+    text-align: center;
     width: 200px;
     background-color: #f9f9f9;
     color: #333;
@@ -512,6 +515,7 @@ button#skipBtn {
     z-index: 1;
     top: -100px; /* Position above the help text */
     left: 50%;
+    right: 50%;
     transform: translateX(-50%);
     box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
     font-size: 14px;
@@ -628,7 +632,7 @@ button#skipBtn {
 
 /* For the buttons */
 .approach-button {
-    font-size: 18px; /* Adjust to your preferred size */
+    font-size: 18px; /* Adjust the size for the approach paths buttons */
     padding: 10px 15px; /* Optional: Adjust padding for larger buttons */
 }
 
@@ -636,6 +640,8 @@ button#skipBtn {
 /* Help container positioned next to the button */
 
 /* Styling for the help text circle */
+
+
 
 
 
