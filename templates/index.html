@@ -111,7 +111,7 @@
                 <button id="skipBtn" class="btn btn-warning" onClick="skipSong()" style="display: block; margin: 10px auto;">Skip Song</button>
             </div>
             
-            <div id="optimalSongMessage">The same song is playing, since it's the most optimal song for your target HR.</div>
+            <div id="optimalSongMessage"  style="font-size: 20px;">The same song is playing, since it's the most optimal song for your target HR.</div>
         </div>
     </div>
     
@@ -121,8 +121,8 @@
     <div id="div2">
         <div class="accordion jumbotron text-center">Click to see our Advanced Features</div>
         <div class="panel">
-            <p>This is the approach path selection</p>
-            <p class="large-font">Press on the approach path you would like to use</p>
+            <p style="font-size: 34px; font-weight: bold;">This is the approach path selection</p>
+            <p style="font-size: 34px; font-weight: bold;">Press on the approach path you would like to use</p>
             <button class="approach-button selected" id="none" onclick="selectApproachPath('none')">None</button>
             <button class="approach-button" id="Shallow" onclick="selectApproachPath('Shallow')">Shallow</button>
             <button class="approach-button" id="Linear" onclick="selectApproachPath('Linear')">Linear</button>
@@ -473,7 +473,7 @@
             const restingHRInput = document.getElementById('restingHR');
 
             validateIntegerInput(targetHRInput, 40, 150);
-            validateIntegerInput(restingHRInput, 50, 150);
+            validateIntegerInput(restingHRInput, 40, 150);
 
             // this will autoplay next song when current song ends
             document.getElementById('audio').addEventListener('ended', skipSong);
@@ -521,8 +521,8 @@
 
         const validateRestingHRInput = () => {
             let value = parseInt(restingHRInput.value);
-            if (isNaN(value) || value < 50) {
-                restingHRInput.value = 50;
+            if (isNaN(value) || value < 40) {
+                restingHRInput.value = 40;
             } else if (value > 150) {
                 restingHRInput.value = 150;
             }
@@ -548,7 +548,7 @@
         }); // The resting HR up goes up by 10 and can only go to 150
 
         restingHRDown.addEventListener('click', () => {
-            restingHRInput.value = Math.max(parseInt(restingHRInput.value) - 10, 50);
+            restingHRInput.value = Math.max(parseInt(restingHRInput.value) - 10, 40);
             validateRestingHRInput();
         }); // The resting HR down arrow goes down by 10 and can only go down to 50
 
